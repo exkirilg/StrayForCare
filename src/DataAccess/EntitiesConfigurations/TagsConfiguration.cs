@@ -17,5 +17,9 @@ public class TagsConfiguration : IEntityTypeConfiguration<Tag>
             .HasColumnType("text")
             .IsRequired()
             .HasMaxLength(20);
+
+        builder
+            .HasIndex(tag => tag.Name)
+            .IsUnique();
     }
 }
