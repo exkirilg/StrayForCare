@@ -1,6 +1,7 @@
 using DataAccess;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
+using Services.Tags;
 using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -36,6 +37,8 @@ builder.Services.AddDbContext<DataContext>(options =>
         x => x.UseNetTopologySuite()
     );
 });
+
+builder.Services.AddScoped<ITagsServices, TagsServices>();
 
 var app = builder.Build();
 

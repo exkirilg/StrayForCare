@@ -1,5 +1,4 @@
-﻿using DataAccess;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Services.Tags;
 using Services.Tags.Dto;
 
@@ -9,11 +8,11 @@ namespace WebAPI.Controllers;
 [ApiController]
 public class TagsController : ControllerBase
 {
-    private readonly DataContext _context;
+    private readonly ITagsServices _tagsServices;
 
-    public TagsController(DataContext context)
+    public TagsController(ITagsServices tagsServices)
     {
-        _context = context;
+        _tagsServices = tagsServices;
     }
 
     /// <summary>
@@ -26,21 +25,29 @@ public class TagsController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> NewTag(NewTagRequest request)
     {
-        var service = new TagsServices(_context);
-        
-        await service.NewTagAsync(request);
+        await _tagsServices.NewTagAsync(request);
 
-        if (service.HasErrors)
-        {
-            foreach (var error in service.Errors)
-            {
-                ModelState.AddModelError(
-                    string.Join(',', error.MemberNames),
-                    error.ErrorMessage ?? string.Empty);
-            }
-            return ValidationProblem();
-        }
+        if (_tagsServices.HasErrors)
+            return this.ParseServicesErrorsToResult(_tagsServices);
         
+        return Ok();
+    }
+
+    /// <summary>
+    /// Changes Tag's name
+    /// </summary>
+    /// <param name="request"></param>
+    /// <returns></returns>
+    /// <response code="200"></response>
+    /// <response code="400">Request validation error or no tag found by provided id</response>
+    [HttpPut]
+    public async Task<IActionResult> UpdateTagName(UpdateTagNameRequest request)
+    {
+        await _tagsServices.UpdateTagNameAsync(request);
+
+        if (_tagsServices.HasErrors)
+            return this.ParseServicesErrorsToResult(_tagsServices);
+
         return Ok();
     }
 }

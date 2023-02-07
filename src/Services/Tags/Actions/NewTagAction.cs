@@ -2,7 +2,7 @@
 using Services.Tags.DbAccess;
 using Services.Tags.Dto;
 
-namespace Services.Tags;
+namespace Services.Tags.Actions;
 
 public class NewTagAction : ActionErrors, IActionAsync<NewTagRequest, Tag>
 {
