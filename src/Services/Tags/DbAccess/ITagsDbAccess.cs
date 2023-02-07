@@ -6,4 +6,5 @@ public interface ITagsDbAccess
 {
     Task<Tag> GetTagById(ushort TagId);
     Task AddAsync(Tag newTag);
+    void Remove(Tag tag);
 }

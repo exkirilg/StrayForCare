@@ -50,4 +50,40 @@ public class TagsController : ControllerBase
 
         return Ok();
     }
+
+    /// <summary>
+    /// Marks Tag as deleted
+    /// </summary>
+    /// <param name="tagId"></param>
+    /// <returns></returns>
+    /// <response code="200"></response>
+    /// <response code="400">No tag found by provided id</response>
+    [HttpPut("delete/{tagId}")]
+    public async Task<IActionResult> SoftDeleteTag(ushort tagId)
+    {
+        await _tagsServices.SoftDeleteAsync(tagId);
+
+        if (_tagsServices.HasErrors)
+            return this.ParseServicesErrorsToResult(_tagsServices);
+
+        return Ok();
+    }
+
+    /// <summary>
+    /// Deletes Tag from database
+    /// </summary>
+    /// <param name="tagId"></param>
+    /// <returns></returns>
+    /// <response code="200"></response>
+    /// <response code="400">No tag found by provided id</response>
+    [HttpDelete("{tagId}")]
+    public async Task<IActionResult> DeleteTag(ushort tagId)
+    {
+        await _tagsServices.DeleteAsync(tagId);
+
+        if (_tagsServices.HasErrors)
+            return this.ParseServicesErrorsToResult(_tagsServices);
+
+        return Ok();
+    }
 }

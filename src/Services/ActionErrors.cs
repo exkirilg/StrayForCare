@@ -10,6 +10,8 @@ public abstract class ActionErrors
 {
     private readonly List<ValidationResult> _errors = new();
 
+    public bool SaveChangesIsNotNeeded { get; protected set; }
+
     public IImmutableList<ValidationResult> Errors => _errors.ToImmutableList();
 
     public bool HasErrors => _errors.Any();

@@ -109,4 +109,46 @@ public class TagsServices : ITagsServices
             }
         }
     }
+
+    public async Task SoftDeleteAsync(ushort tagId)
+    {
+        RunnerWriteDbAsync<ushort, Tag> runner = new(
+            _context,
+            new SoftDeleteTagAction(new TagsDbAccess(_context))
+        );
+
+        try
+        {
+            _ = await runner.RunActionAsync(tagId);
+            if (runner.HasErrors) _errors.AddRange(runner.Errors);
+        }
+        catch (NoEntityFoundByIdException ex)
+        {
+            _errors.Add(
+                new ValidationResult(
+                    ex.Message,
+                    new string[] { ex.PropertyName }));
+        }
+    }
+
+    public async Task DeleteAsync(ushort tagId)
+    {
+        RunnerWriteDbAsync<ushort, Tag> runner = new(
+            _context,
+            new DeleteTagAction(new TagsDbAccess(_context))
+        );
+
+        try
+        {
+            _ = await runner.RunActionAsync(tagId);
+            if (runner.HasErrors) _errors.AddRange(runner.Errors);
+        }
+        catch (NoEntityFoundByIdException ex)
+        {
+            _errors.Add(
+                new ValidationResult(
+                    ex.Message,
+                    new string[] { ex.PropertyName }));
+        }
+    }
 }

@@ -21,5 +21,8 @@ public class TagsConfiguration : IEntityTypeConfiguration<Tag>
         builder
             .HasIndex(tag => tag.Name)
             .IsUnique();
+
+        builder
+            .HasQueryFilter(tag => !tag.SoftDeleted);
     }
 }

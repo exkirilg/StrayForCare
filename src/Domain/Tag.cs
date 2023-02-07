@@ -14,6 +14,8 @@ public class Tag : IComparable<Tag>, IValidatableObject
         set => _name = value.Trim();
     }
 
+    public bool SoftDeleted { get; set; }
+
     private Tag()
     {
     }

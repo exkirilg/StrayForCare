@@ -25,7 +25,7 @@ public class RunnerWriteDbAsync<TIn, TOut>
 
         if (_actionClass.HasErrors) _errors.AddRange(_actionClass.Errors);
 
-        if (!HasErrors)
+        if (!HasErrors && !_actionClass.SaveChangesIsNotNeeded)
         {
             var errors = await _context.SaveChangesWithValidationAsync();
             if (errors.Any()) _errors.AddRange(errors);
