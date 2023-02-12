@@ -30,11 +30,33 @@ public class TagsServices : ITagsServices
         _errors.Clear();
     }
 
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <param name="request"></param>
-    /// <returns><see cref="Tag.TagId"/></returns>
+    public async Task<TagDto?> GetTagByIdAsync(ushort tagId)
+    {
+        RunnerReadDbAsync<ushort, Tag> runner = new(
+            new GetTagByIdAction(new TagsDbAccess(_context))
+        );
+
+        Tag? tag = null;
+
+        try
+        {
+            tag = await runner.RunActionAsync(tagId);
+            if (runner.HasErrors) _errors.AddRange(runner.Errors);
+        }
+        catch (NoEntityFoundByIdException ex)
+        {
+            _errors.Add(
+                new ValidationResult(
+                    ex.Message,
+                    new string[] { ex.PropertyName }));
+        }
+
+        if (tag is null)
+            return null;
+
+        return TagDto.FromTag(tag);
+    }
+
     public async Task<ushort> NewTagAsync(NewTagRequest request)
     {
         RunnerWriteDbAsync<NewTagRequest, Tag> runner = new (

@@ -16,6 +16,24 @@ public class TagsController : ControllerBase
     }
 
     /// <summary>
+    /// Returns Tag with specified id
+    /// </summary>
+    /// <param name="tagId"></param>
+    /// <returns></returns>
+    /// <response code="200"></response>
+    /// <response code="400">No Tag found by provided id</response>
+    [HttpGet("{tagId}")]
+    public async Task<IActionResult> GetTagById(ushort tagId)
+    {
+        TagDto? result = await _tagsServices.GetTagByIdAsync(tagId);
+
+        if (_tagsServices.HasErrors)
+            return this.ParseServicesErrorsToResult(_tagsServices);
+
+        return Ok(result);
+    }
+
+    /// <summary>
     /// Creates new Tag
     /// </summary>
     /// <param name="request"></param>
