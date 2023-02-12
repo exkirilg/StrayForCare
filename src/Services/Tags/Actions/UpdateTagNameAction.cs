@@ -15,7 +15,7 @@ public class UpdateTagNameAction : ActionErrors, IActionAsync<UpdateTagNameReque
 
     public async Task<Tag> ActionAsync(UpdateTagNameRequest dto)
     {
-        Tag tag = await _dbAccess.GetTagById(dto.TagId);
+        Tag tag = await _dbAccess.GetTagByIdAsync(dto.TagId);
 
         tag.Name = dto.Name;
 

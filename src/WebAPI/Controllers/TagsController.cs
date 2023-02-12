@@ -16,6 +16,24 @@ public class TagsController : ControllerBase
     }
 
     /// <summary>
+    /// Returns collection of Tags with pagination
+    /// </summary>
+    /// <param name="request"></param>
+    /// <returns></returns>
+    /// <response code="200"></response>
+    /// <response code="400">Request validation error</response>
+    [HttpGet]
+    public async Task<IActionResult> GetTagsWithPagination([FromQuery] GetTagsRequest request)
+    {
+        IEnumerable<TagDto> result = await _tagsServices.GetTagsWithPagination(request);
+
+        if (_tagsServices.HasErrors)
+            return this.ParseServicesErrorsToResult(_tagsServices);
+
+        return Ok(result);
+    }
+
+    /// <summary>
     /// Returns Tag with specified id
     /// </summary>
     /// <param name="tagId"></param>

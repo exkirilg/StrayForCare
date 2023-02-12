@@ -30,6 +30,37 @@ public class TagsServices : ITagsServices
         _errors.Clear();
     }
 
+    public async Task<IEnumerable<TagDto>> GetTagsWithPagination(GetTagsRequest request)
+    {
+        RunnerReadDbAsync<GetTagsRequest, IEnumerable<TagDto>> runner = new(
+            new GetTagsWithPaginationAction(new TagsDbAccess(_context))
+        );
+
+        IEnumerable<TagDto> result = Enumerable.Empty<TagDto>();
+
+        try
+        {
+            result = await runner.RunActionAsync(request);
+            if (runner.HasErrors) _errors.AddRange(runner.Errors);
+        }
+        catch (ArgumentOutOfRangeException ex)
+        {
+            if (ex.ParamName is null ||
+                !(ex.ParamName != nameof(GetTagsRequest.PageSize) 
+                || ex.ParamName != nameof(GetTagsRequest.PageStartZeroBased)))
+            {
+                throw;
+            }
+
+            _errors.Add(
+                new ValidationResult(
+                    ex.Message,
+                    new string[] { ex.ParamName }));
+        }
+
+        return result;
+    }
+
     public async Task<TagDto?> GetTagByIdAsync(ushort tagId)
     {
         RunnerReadDbAsync<ushort, Tag> runner = new(

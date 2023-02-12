@@ -14,7 +14,7 @@ public class SoftDeleteTagAction : ActionErrors, IActionAsync<ushort, Tag>
 
     public async Task<Tag> ActionAsync(ushort tagId)
     {
-        Tag tag = await _dbAccess.GetTagById(tagId);
+        Tag tag = await _dbAccess.GetTagByIdAsync(tagId);
 
         if (tag.SoftDeleted)
         {

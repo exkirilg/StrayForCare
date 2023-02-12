@@ -1,10 +1,12 @@
 ﻿using Domain;
+using Services.Tags.Dto;
 
 namespace Services.Tags.DbAccess;
 
 public interface ITagsDbAccess
 {
-    Task<Tag> GetTagById(ushort TagId);
+    Task<IEnumerable<TagDto>> GetTagsDtoWithPaginationAsync(GetTagsRequest request);
+    Task<Tag> GetTagByIdAsync(ushort TagId);
     Task AddAsync(Tag newTag);
     void Remove(Tag tag);
 }

@@ -2,6 +2,10 @@
 using Domain;
 using Microsoft.EntityFrameworkCore;
 using Services.Exceptions;
+using Services.Queries;
+using Services.Tags.Dto;
+using Services.Tags.Queries;
+using System.Linq.Expressions;
 
 namespace Services.Tags.DbAccess;
 
@@ -14,7 +18,26 @@ public class TagsDbAccess : ITagsDbAccess
         _context = context;
     }
 
-    public async Task<Tag> GetTagById(ushort TagId)
+    public async Task<IEnumerable<TagDto>> GetTagsDtoWithPaginationAsync(GetTagsRequest request)
+    {
+        Expression<Func<Tag, bool>>? filter = null;
+        if (request.NameSearch is not null)
+            filter = TagsFilter.FilterByNameExpression(request.NameSearch);
+
+        TagsOrderByOptions orderBy = TagsOrderByOptions.ByNameAscending;
+        if (request.Descending is not null && (bool)request.Descending)
+            orderBy = TagsOrderByOptions.ByNameDescending;
+
+        return await _context.Tags
+            .AsNoTracking()
+            .FilterTags(filter)
+            .OrderTags(orderBy)
+            .MapTagsToDto()
+            .Page(request.PageSize, request.PageStartZeroBased)
+            .ToListAsync();
+    }
+
+    public async Task<Tag> GetTagByIdAsync(ushort TagId)
     {
         Tag? result = await _context.Tags
             .IgnoreQueryFilters()

@@ -14,6 +14,6 @@ public class GetTagByIdAction : ActionErrors, IActionAsync<ushort, Tag>
 
     public async Task<Tag> ActionAsync(ushort tagId)
     {
-        return await _dbAccess.GetTagById(tagId);
+        return await _dbAccess.GetTagByIdAsync(tagId);
     }
 }
