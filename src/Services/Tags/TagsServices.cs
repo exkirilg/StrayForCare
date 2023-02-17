@@ -32,11 +32,18 @@ public class TagsServices : ITagsServices
 
     public async Task<IEnumerable<TagDto>> GetTagsWithPagination(GetTagsRequest request)
     {
+        IEnumerable<TagDto> result = Enumerable.Empty<TagDto>();
+
+        var validationResults = request.Validate(new ValidationContext(request));
+        if (validationResults.Any())
+        {
+            _errors.AddRange(validationResults);
+            return result;
+        }
+
         RunnerReadDbAsync<GetTagsRequest, IEnumerable<TagDto>> runner = new(
             new GetTagsWithPaginationAction(new TagsDbAccess(_context))
         );
-
-        IEnumerable<TagDto> result = Enumerable.Empty<TagDto>();
 
         try
         {
@@ -47,7 +54,7 @@ public class TagsServices : ITagsServices
         {
             if (ex.ParamName is null ||
                 !(ex.ParamName != nameof(GetTagsRequest.PageSize) 
-                || ex.ParamName != nameof(GetTagsRequest.PageStartZeroBased)))
+                || ex.ParamName != nameof(GetTagsRequest.PageNum)))
             {
                 throw;
             }

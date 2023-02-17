@@ -2,18 +2,18 @@
 
 public static class GenericQueriesExtensions
 {
-    public static IQueryable<T> Page<T>(this IQueryable<T> query, int pageSize, int pageStartZeroBased)
+    public static IQueryable<T> Page<T>(this IQueryable<T> query, int pageSize, int pageNum)
     {
         if (pageSize <= 0)
             throw new ArgumentOutOfRangeException(
-                nameof(pageSize), pageSize, "Page size cannot be less or equal to zero");
+                nameof(pageSize), pageSize, "Page size must be greater than 0");
 
-        if (pageStartZeroBased < 0)
+        if (pageNum <= 0)
             throw new ArgumentOutOfRangeException(
-                nameof(pageStartZeroBased), pageStartZeroBased, "Page start cannot be less than zero");
+                nameof(pageNum), pageNum, "Page number must be greater than 0");
 
-        if (pageStartZeroBased != 0)
-            query = query.Skip(pageStartZeroBased);
+        if (pageNum != 1)
+            query = query.Skip(pageSize * (pageNum - 1));
 
         return query.Take(pageSize);
     }

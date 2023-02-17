@@ -14,7 +14,7 @@ public static class ControllerBaseExtentions
                 string.Join(',', error.MemberNames),
                 error.ErrorMessage ?? string.Empty);
         }
-        
-        return controller.ValidationProblem();
+
+        return controller.BadRequest(controller.ModelState);
     }
 }

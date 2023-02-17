@@ -21,11 +21,11 @@ public class TagsDbAccess : ITagsDbAccess
     public async Task<IEnumerable<TagDto>> GetTagsDtoWithPaginationAsync(GetTagsRequest request)
     {
         Expression<Func<Tag, bool>>? filter = null;
-        if (request.NameSearch is not null)
+        if (!string.IsNullOrWhiteSpace(request.NameSearch))
             filter = TagsFilter.FilterByNameExpression(request.NameSearch);
 
         TagsOrderByOptions orderBy = TagsOrderByOptions.ByNameAscending;
-        if (request.Descending is not null && (bool)request.Descending)
+        if (request.Descending)
             orderBy = TagsOrderByOptions.ByNameDescending;
 
         return await _context.Tags
@@ -33,7 +33,7 @@ public class TagsDbAccess : ITagsDbAccess
             .FilterTags(filter)
             .OrderTags(orderBy)
             .MapTagsToDto()
-            .Page(request.PageSize, request.PageStartZeroBased)
+            .Page(request.PageSize, request.PageNum)
             .ToListAsync();
     }
 
