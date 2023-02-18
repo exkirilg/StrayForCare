@@ -158,4 +158,74 @@ public class TagsControllerTests : IClassFixture<TestDatabaseFixture>
         Assert.NotNull(valResult);
         Assert.True(valResult.ContainsKey(nameof(Tag.TagId)));
     }
+
+    [Theory]
+    [InlineData("Bat")]
+    [InlineData("Cute turtle")]
+    [InlineData("Raccoon")]
+    public async Task NewTag_ReturnsOk(string name)
+    {
+        using var context = _fixture.CreateContext();
+        context.Database.BeginTransaction();
+        
+        var controller = new TagsController(new TagsServices(context));
+
+        var request = new NewTagRequest(name);
+        var result = (await controller.NewTag(request)) as StatusCodeResult;
+
+        context.ChangeTracker.Clear();
+
+        Assert.NotNull(result);
+        Assert.Equal(200, result.StatusCode);
+
+        _ = context.Tags.Single(tag => tag.Name == name);
+    }
+
+    [Theory]
+    [InlineData("Cat")]
+    [InlineData("Dog")]
+    public async Task NewTag_ReturnsBadRequest_NameIsNotUnique(string name)
+    {
+        using var context = _fixture.CreateContext();
+        context.Database.BeginTransaction();
+
+        var controller = new TagsController(new TagsServices(context));
+
+        var request = new NewTagRequest(name);
+
+        var result = (await controller.NewTag(request)) as ObjectResult;
+
+        Assert.NotNull(result);
+        Assert.Equal(400, result.StatusCode);
+
+        var valResult = result.Value as Dictionary<string, object>;
+
+        Assert.NotNull(valResult);
+        Assert.True(valResult.ContainsKey(nameof(Tag.Name)));
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData(" ")]
+    [InlineData("   ")]
+    [InlineData("Name is too long for a Tag!")]
+    public async Task NewTag_ReturnsBadRequest_NameIsNotValid(string name)
+    {
+        using var context = _fixture.CreateContext();
+        context.Database.BeginTransaction();
+
+        var controller = new TagsController(new TagsServices(context));
+
+        var request = new NewTagRequest(name);
+
+        var result = (await controller.NewTag(request)) as ObjectResult;
+
+        Assert.NotNull(result);
+        Assert.Equal(400, result.StatusCode);
+
+        var valResult = result.Value as Dictionary<string, object>;
+
+        Assert.NotNull(valResult);
+        Assert.True(valResult.ContainsKey(nameof(Tag.Name)));
+    }
 }
