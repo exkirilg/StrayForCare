@@ -1,5 +1,4 @@
 ﻿using Domain;
-using IntegrationTests.TestData;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Services.Tags;
@@ -18,104 +17,84 @@ public class TagsControllerTests : IClassFixture<TestDatabaseFixture>
 	}
 
 	[Theory]
-	[InlineData(5, 1, 5, false)]
-    [InlineData(5, 2, 2, false)]
-    [InlineData(5, 3, 0, false)]
-    [InlineData(5, 1, 5, true)]
-    [InlineData(5, 2, 2, true)]
-    [InlineData(5, 3, 0, true)]
-    public async Task GetTagsWithPagination_ReturnsOk(int pageSize, int pageNum, int expNum, bool desc)
+	[InlineData(5, 1, false)]
+    [InlineData(5, 2, false)]
+    [InlineData(5, 3, false)]
+    [InlineData(5, 1, true)]
+    [InlineData(5, 2, true)]
+    [InlineData(5, 3, true)]
+    public async Task GetTagsWithPagination_ReturnsOk(int pageSize, int pageNum, bool desc)
 	{
         using var context = _fixture.CreateContext();
         var controller = new TagsController(new TagsServices(context));
+        
         GetTagsRequest request = new(pageSize, pageNum, Descending: desc);
 
-        var result = (await controller.GetTagsWithPagination(request)) as ObjectResult;
+        IQueryable<Tag> query = context.Tags;
+        if (desc) query = query.OrderByDescending(tag => tag.Name);
+        else query = query.OrderBy(tag => tag.Name);
+        query = query.Skip(pageSize * (pageNum - 1)).Take(pageSize);
 
-        Assert.NotNull(result);
-        Assert.Equal(200, result.StatusCode);
+        IEnumerable<TagDto> expCollection = query.Select(TagDto.FromTag).ToList();
 
-        var collection = result.Value as IEnumerable<TagDto>;
+        var result = await controller.GetTagsWithPagination(request);
+        var collection = EnsureCorrectOkObjectResultAndCorrectValue<IEnumerable<TagDto>>(result as ObjectResult);
 
-        Assert.NotNull(collection);
-        Assert.Equal(expNum, collection.Count());
-
-        IEnumerable<TagDto> expCollection;
-        if (desc)
-        {
-            expCollection = TagsTestData.DtoData
-                .OrderByDescending(tag => tag.Name)
-                .Skip(pageSize * (pageNum - 1))
-                .Take(pageSize);
-        }
-        else
-        {
-            expCollection = TagsTestData.DtoData
-                .OrderBy(tag => tag.Name)
-                .Skip(pageSize * (pageNum - 1))
-                .Take(pageSize);
-        }
-        
+        Assert.Equal(expCollection.Count(), collection.Count());        
         Assert.Equal(expCollection, collection);
     }
 
     [Theory]
-    [InlineData("aDopT", "6")]
-    [InlineData("cat", "1")]
-    [InlineData("s", "3,5,7")]
-    [InlineData("ss", "7")]
-    [InlineData("", "1,2,3,4,5,6,7,8,9")]
-    [InlineData("cute turtle", "")]
-    public async Task GetTagsWithPagination_ReturnsOkWithNameSearch(string nameSearch, string expIds)
+    [InlineData("aDopT")]
+    [InlineData("cat")]
+    [InlineData("s")]
+    [InlineData("ss")]
+    [InlineData("")]
+    [InlineData("cute turtle")]
+    public async Task GetTagsWithPagination_ReturnsOkWithNameSearch(string nameSearch)
     {
         using var context = _fixture.CreateContext();
         var controller = new TagsController(new TagsServices(context));
-        GetTagsRequest request = new(TagsTestData.Data.Count, 1, nameSearch);
-
-        var result = (await controller.GetTagsWithPagination(request)) as ObjectResult;
-
-        Assert.NotNull(result);
-        Assert.Equal(200, result.StatusCode);
-
-        var collection = result.Value as IEnumerable<TagDto>;
-
-        Assert.NotNull(collection);
-
-        var expIdsCollection = expIds
-            .Split(',', StringSplitOptions.RemoveEmptyEntries)
-            .Select(id => ushort.Parse(id));
         
-        var expCollection = TagsTestData.DtoData
-            .Where(tag => expIdsCollection.Contains(tag.TagId))     
-            .OrderBy(tag => tag.Name);
+        GetTagsRequest request = new(context.Tags.Count(), 1, nameSearch);
+
+        IEnumerable<TagDto> expCollection = context.Tags
+            .Where(tag => tag.Name.ToLower().Contains(nameSearch.ToLower()))
+            .OrderBy(tag => tag.Name)
+            .Select(TagDto.FromTag)
+            .ToList();
+
+        var result = await controller.GetTagsWithPagination(request);
+        var collection = EnsureCorrectOkObjectResultAndCorrectValue<IEnumerable<TagDto>>(result as ObjectResult);
 
         Assert.Equal(expCollection, collection);
     }
 
     [Theory]
-    [InlineData(0, 1, nameof(GetTagsRequest.PageSize))]
-    [InlineData(0, 0, $"{nameof(GetTagsRequest.PageSize)},{nameof(GetTagsRequest.PageNum)}")]
-    [InlineData(1, 0, nameof(GetTagsRequest.PageNum))]
-    [InlineData(-1, 1, nameof(GetTagsRequest.PageSize))]
-    [InlineData(-1, -1, $"{nameof(GetTagsRequest.PageSize)},{nameof(GetTagsRequest.PageNum)}")]
-    [InlineData(1, -1, nameof(GetTagsRequest.PageNum))]
-    public async Task GetTagsWithPagination_ReturnsBadRequest(int pageSize, int pageNum, string expValidationProps)
+    [InlineData(0, 1)]
+    [InlineData(0, 0)]
+    [InlineData(1, 0)]
+    [InlineData(-1, 1)]
+    [InlineData(-1, -1)]
+    [InlineData(1, -1)]
+    public async Task GetTagsWithPagination_ReturnsBadRequest(int pageSize, int pageNum)
     {
         using var context = _fixture.CreateContext();
         var controller = new TagsController(new TagsServices(context));
+        
         GetTagsRequest request = new(pageSize, pageNum);
 
-        var result = (await controller.GetTagsWithPagination(request)) as ObjectResult;
+        string? expProps = default;
+        if (pageSize <= 0 && pageNum <= 0)
+            expProps = $"{nameof(GetTagsRequest.PageSize)},{nameof(GetTagsRequest.PageNum)}";
+        else if (pageSize <= 0)
+            expProps = nameof(GetTagsRequest.PageSize);
+        else if (pageNum <= 0)
+            expProps = nameof(GetTagsRequest.PageNum);
 
-        Assert.NotNull(result);
-        Assert.Equal(400, result.StatusCode);
+        var result = await controller.GetTagsWithPagination(request);
 
-        var valResult = result.Value as Dictionary<string, object>;
-
-        Assert.NotNull(valResult);
-
-        foreach (var expProp in expValidationProps.Split(',', StringSplitOptions.None))
-            Assert.True(valResult.ContainsKey(expProp));
+        EnsureCorrectBadRequestResult(result as ObjectResult, expProps);
     }
 
     [Theory]
@@ -127,16 +106,11 @@ public class TagsControllerTests : IClassFixture<TestDatabaseFixture>
         using var context = _fixture.CreateContext();
         var controller = new TagsController(new TagsServices(context));
 
-        var expDto = TagsTestData.DtoData.Where(tag => tag.TagId == tagId).First();
+        TagDto expDto = context.Tags.Where(tag => tag.TagId == tagId).Select(TagDto.FromTag).First();
 
-        var result = (await controller.GetTagById(tagId)) as ObjectResult;
+        var result = await controller.GetTagById(tagId);
+        var dto = EnsureCorrectOkObjectResultAndCorrectValue<TagDto>(result as ObjectResult);
 
-        Assert.NotNull(result);
-        Assert.Equal(200, result.StatusCode);
-
-        var dto = result.Value as TagDto;
-
-        Assert.NotNull(dto);
         Assert.Equal(expDto, dto);
     }
 
@@ -149,15 +123,9 @@ public class TagsControllerTests : IClassFixture<TestDatabaseFixture>
         using var context = _fixture.CreateContext();
         var controller = new TagsController(new TagsServices(context));
 
-        var result = (await controller.GetTagById(tagId)) as ObjectResult;
+        var result = await controller.GetTagById(tagId);
 
-        Assert.NotNull(result);
-        Assert.Equal(400, result.StatusCode);
-
-        var valResult = result.Value as Dictionary<string, object>;
-
-        Assert.NotNull(valResult);
-        Assert.True(valResult.ContainsKey(nameof(Tag.TagId)));
+        EnsureCorrectBadRequestResult(result as ObjectResult, nameof(Tag.TagId));
     }
 
     [Theory]
@@ -168,16 +136,14 @@ public class TagsControllerTests : IClassFixture<TestDatabaseFixture>
     {
         using var context = _fixture.CreateContext();
         context.Database.BeginTransaction();
-        
         var controller = new TagsController(new TagsServices(context));
 
         var request = new NewTagRequest(name);
-        var result = (await controller.NewTag(request)) as StatusCodeResult;
+        var result = await controller.NewTag(request);
 
         context.ChangeTracker.Clear();
 
-        Assert.NotNull(result);
-        Assert.Equal(200, result.StatusCode);
+        EnsureCorrectOkStatusCodeResult(result as StatusCodeResult);
 
         _ = context.Tags.Single(tag => tag.Name == name);
     }
@@ -188,23 +154,13 @@ public class TagsControllerTests : IClassFixture<TestDatabaseFixture>
     public async Task NewTag_ReturnsBadRequest_NameIsNotUnique(string name)
     {
         using var context = _fixture.CreateContext();
-        context.Database.BeginTransaction();
-
         var controller = new TagsController(new TagsServices(context));
 
         var request = new NewTagRequest(name);
 
-        var result = (await controller.NewTag(request)) as ObjectResult;
+        var result = await controller.NewTag(request);
 
-        context.ChangeTracker.Clear();
-
-        Assert.NotNull(result);
-        Assert.Equal(400, result.StatusCode);
-
-        var valResult = result.Value as Dictionary<string, object>;
-
-        Assert.NotNull(valResult);
-        Assert.True(valResult.ContainsKey(nameof(Tag.Name)));
+        EnsureCorrectBadRequestResult(result as ObjectResult, nameof(Tag.Name));
     }
 
     [Theory]
@@ -215,23 +171,13 @@ public class TagsControllerTests : IClassFixture<TestDatabaseFixture>
     public async Task NewTag_ReturnsBadRequest_NameIsNotValid(string name)
     {
         using var context = _fixture.CreateContext();
-        context.Database.BeginTransaction();
-
         var controller = new TagsController(new TagsServices(context));
 
         var request = new NewTagRequest(name);
 
-        var result = (await controller.NewTag(request)) as ObjectResult;
+        var result = await controller.NewTag(request);
 
-        context.ChangeTracker.Clear();
-
-        Assert.NotNull(result);
-        Assert.Equal(400, result.StatusCode);
-
-        var valResult = result.Value as Dictionary<string, object>;
-
-        Assert.NotNull(valResult);
-        Assert.True(valResult.ContainsKey(nameof(Tag.Name)));
+        EnsureCorrectBadRequestResult(result as ObjectResult, nameof(Tag.Name));
     }
 
     [Theory]
@@ -242,16 +188,15 @@ public class TagsControllerTests : IClassFixture<TestDatabaseFixture>
     {
         using var context = _fixture.CreateContext();
         context.Database.BeginTransaction();
-
         var controller = new TagsController(new TagsServices(context));
 
         var request = new UpdateTagNameRequest(tagId, name);
-        var result = (await controller.UpdateTagName(request)) as StatusCodeResult;
+        
+        var result = await controller.UpdateTagName(request);
 
         context.ChangeTracker.Clear();
 
-        Assert.NotNull(result);
-        Assert.Equal(200, result.StatusCode);
+        EnsureCorrectOkStatusCodeResult(result as StatusCodeResult);
 
         _ = context.Tags.Single(tag => tag.TagId == tagId && tag.Name == name);
     }
@@ -262,22 +207,13 @@ public class TagsControllerTests : IClassFixture<TestDatabaseFixture>
     public async Task UpdateTagName_ReturnsBadRequest_NameIsNotUnique(ushort tagId, string name)
     {
         using var context = _fixture.CreateContext();
-        context.Database.BeginTransaction();
-
         var controller = new TagsController(new TagsServices(context));
 
         var request = new UpdateTagNameRequest(tagId, name);
-        var result = (await controller.UpdateTagName(request)) as ObjectResult;
+        
+        var result = await controller.UpdateTagName(request);
 
-        context.ChangeTracker.Clear();
-
-        Assert.NotNull(result);
-        Assert.Equal(400, result.StatusCode);
-
-        var valResult = result.Value as Dictionary<string, object>;
-
-        Assert.NotNull(valResult);
-        Assert.True(valResult.ContainsKey(nameof(Tag.Name)));
+        EnsureCorrectBadRequestResult(result as ObjectResult, nameof(Tag.Name));
     }
 
     [Theory]
@@ -288,22 +224,13 @@ public class TagsControllerTests : IClassFixture<TestDatabaseFixture>
     public async Task UpdateTagName_ReturnsBadRequest_NameIsNotValid(ushort tagId, string name)
     {
         using var context = _fixture.CreateContext();
-        context.Database.BeginTransaction();
-
         var controller = new TagsController(new TagsServices(context));
 
         var request = new UpdateTagNameRequest(tagId, name);
-        var result = (await controller.UpdateTagName(request)) as ObjectResult;
+        
+        var result = await controller.UpdateTagName(request);
 
-        context.ChangeTracker.Clear();
-
-        Assert.NotNull(result);
-        Assert.Equal(400, result.StatusCode);
-
-        var valResult = result.Value as Dictionary<string, object>;
-
-        Assert.NotNull(valResult);
-        Assert.True(valResult.ContainsKey(nameof(Tag.Name)));
+        EnsureCorrectBadRequestResult(result as ObjectResult, nameof(Tag.Name));
     }
 
     [Theory]
@@ -314,24 +241,21 @@ public class TagsControllerTests : IClassFixture<TestDatabaseFixture>
     {
         using var context = _fixture.CreateContext();
         context.Database.BeginTransaction();
-
         var controller = new TagsController(new TagsServices(context));
 
-        var result = (await controller.SoftDeleteTag(tagId)) as StatusCodeResult;
+        var result = await controller.SoftDeleteTag(tagId);
 
         context.ChangeTracker.Clear();
 
-        Assert.NotNull(result);
-        Assert.Equal(200, result.StatusCode);
+        EnsureCorrectOkStatusCodeResult(result as StatusCodeResult);
 
-        Tag? tag;
+        // No tag with query filter
+        Assert.Null(
+            context.Tags.FirstOrDefault(tag => tag.TagId == tagId)
+        );
 
-        tag = context.Tags.FirstOrDefault(tag => tag.TagId == tagId);
-
-        Assert.Null(tag);
-
-        tag = context.Tags.IgnoreQueryFilters().Single(tag => tag.TagId == tagId);
-
+        // There is a tag with query filter ignored
+        Tag? tag = context.Tags.IgnoreQueryFilters().Single(tag => tag.TagId == tagId);
         Assert.NotNull(tag);
         Assert.True(tag.SoftDeleted);
     }
@@ -342,21 +266,11 @@ public class TagsControllerTests : IClassFixture<TestDatabaseFixture>
     public async Task SoftDeleteTag_ReturnsBadRequest(ushort tagId)
     {
         using var context = _fixture.CreateContext();
-        context.Database.BeginTransaction();
-
         var controller = new TagsController(new TagsServices(context));
 
-        var result = (await controller.SoftDeleteTag(tagId)) as ObjectResult;
+        var result = await controller.SoftDeleteTag(tagId);
 
-        context.ChangeTracker.Clear();
-
-        Assert.NotNull(result);
-        Assert.Equal(400, result.StatusCode);
-
-        var valResult = result.Value as Dictionary<string, object>;
-
-        Assert.NotNull(valResult);
-        Assert.True(valResult.ContainsKey(nameof(Tag.TagId)));
+        EnsureCorrectBadRequestResult(result as ObjectResult, nameof(Tag.TagId));
     }
 
     [Theory]
@@ -367,25 +281,23 @@ public class TagsControllerTests : IClassFixture<TestDatabaseFixture>
     {
         using var context = _fixture.CreateContext();
         context.Database.BeginTransaction();
-
         var controller = new TagsController(new TagsServices(context));
 
-        var result = (await controller.DeleteTag(tagId)) as StatusCodeResult;
+        var result = await controller.DeleteTag(tagId);
 
         context.ChangeTracker.Clear();
 
-        Assert.NotNull(result);
-        Assert.Equal(200, result.StatusCode);
+        EnsureCorrectOkStatusCodeResult(result as StatusCodeResult);
 
-        Tag? tag;
+        // No tag with query filter
+        Assert.Null(
+            context.Tags.FirstOrDefault(tag => tag.TagId == tagId)
+        );
 
-        tag = context.Tags.FirstOrDefault(tag => tag.TagId == tagId);
-
-        Assert.Null(tag);
-
-        tag = context.Tags.IgnoreQueryFilters().FirstOrDefault(tag => tag.TagId == tagId);
-
-        Assert.Null(tag);
+        // No tag with query filter ignored
+        Assert.Null(
+            context.Tags.IgnoreQueryFilters().FirstOrDefault(tag => tag.TagId == tagId)
+        );
     }
 
     [Theory]
@@ -394,20 +306,43 @@ public class TagsControllerTests : IClassFixture<TestDatabaseFixture>
     public async Task DeleteTag_ReturnsBadRequest(ushort tagId)
     {
         using var context = _fixture.CreateContext();
-        context.Database.BeginTransaction();
-
         var controller = new TagsController(new TagsServices(context));
 
-        var result = (await controller.DeleteTag(tagId)) as ObjectResult;
+        var result = await controller.DeleteTag(tagId);
 
-        context.ChangeTracker.Clear();
+        EnsureCorrectBadRequestResult(result as ObjectResult, nameof(Tag.TagId));
+    }
 
+    private TVal EnsureCorrectOkObjectResultAndCorrectValue<TVal>(ObjectResult? result)
+        where TVal : class
+    {
+        Assert.NotNull(result);
+        Assert.Equal(200, result.StatusCode);
+
+        var value = result.Value as TVal;
+
+        Assert.NotNull(value);
+
+        return value;
+    }
+
+    private void EnsureCorrectOkStatusCodeResult(StatusCodeResult? result)
+    {
+        Assert.NotNull(result);
+        Assert.Equal(200, result.StatusCode);
+    }
+
+    private void EnsureCorrectBadRequestResult(ObjectResult? result, string? expProps = default)
+    {
         Assert.NotNull(result);
         Assert.Equal(400, result.StatusCode);
+
+        if (expProps is null) return;
 
         var valResult = result.Value as Dictionary<string, object>;
 
         Assert.NotNull(valResult);
-        Assert.True(valResult.ContainsKey(nameof(Tag.TagId)));
+        foreach (var expProp in expProps.Split(',', StringSplitOptions.None))
+            Assert.True(valResult.ContainsKey(expProp));
     }
 }

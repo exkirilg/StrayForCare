@@ -1,5 +1,5 @@
 ﻿using DataAccess;
-using IntegrationTests.TestData;
+using Domain;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 
@@ -30,7 +30,7 @@ public class TestDatabaseFixture
                     context.Database.EnsureDeleted();
                     context.Database.EnsureCreated();
 
-                    context.AddRange(TagsTestData.Data);
+                    SeedTagsTestData(context);
 
                     context.SaveChanges();
                 }
@@ -45,4 +45,18 @@ public class TestDatabaseFixture
             new DbContextOptionsBuilder<DataContext>()
                 .UseNpgsql(_configuration.GetConnectionString("AppDataConnection"))
                 .Options);
+
+    private void SeedTagsTestData(DataContext context)
+    {
+        context.AddRange(new Tag[]
+        {
+            new Tag("Cat"),
+            new Tag("Dog"),
+            new Tag("Starving"),
+            new Tag("Injured"),
+            new Tag("Sick"),
+            new Tag("Adoption"),
+            new Tag("Aggressive")
+        });
+    }
 }
