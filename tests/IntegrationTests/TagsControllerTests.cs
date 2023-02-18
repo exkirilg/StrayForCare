@@ -1,4 +1,5 @@
-﻿using IntegrationTests.TestData;
+﻿using Domain;
+using IntegrationTests.TestData;
 using Microsoft.AspNetCore.Mvc;
 using Services.Tags;
 using Services.Tags.Dto;
@@ -91,12 +92,12 @@ public class TagsControllerTests : IClassFixture<TestDatabaseFixture>
     }
 
     [Theory]
-    [InlineData(0, 1, "PageSize")]
-    [InlineData(0, 0, "PageSize,PageNum")]
-    [InlineData(1, 0, "PageNum")]
-    [InlineData(-1, 1, "PageSize")]
-    [InlineData(-1, -1, "PageSize,PageNum")]
-    [InlineData(1, -1, "PageNum")]
+    [InlineData(0, 1, nameof(GetTagsRequest.PageSize))]
+    [InlineData(0, 0, $"{nameof(GetTagsRequest.PageSize)},{nameof(GetTagsRequest.PageNum)}")]
+    [InlineData(1, 0, nameof(GetTagsRequest.PageNum))]
+    [InlineData(-1, 1, nameof(GetTagsRequest.PageSize))]
+    [InlineData(-1, -1, $"{nameof(GetTagsRequest.PageSize)},{nameof(GetTagsRequest.PageNum)}")]
+    [InlineData(1, -1, nameof(GetTagsRequest.PageNum))]
     public async Task GetTagsWithPagination_ReturnsBadRequest(int pageSize, int pageNum, string expValidationProps)
     {
         using var context = _fixture.CreateContext();
@@ -114,5 +115,47 @@ public class TagsControllerTests : IClassFixture<TestDatabaseFixture>
 
         foreach (var expProp in expValidationProps.Split(',', StringSplitOptions.None))
             Assert.True(valResult.ContainsKey(expProp));
+    }
+
+    [Theory]
+    [InlineData(1)]
+    [InlineData(3)]
+    [InlineData(7)]
+    public async Task GetTagById_ReturnsOk(ushort tagId)
+    {
+        using var context = _fixture.CreateContext();
+        var controller = new TagsController(new TagsServices(context));
+
+        var expDto = TagsTestData.DtoData.Where(tag => tag.TagId == tagId).First();
+
+        var result = (await controller.GetTagById(tagId)) as ObjectResult;
+
+        Assert.NotNull(result);
+        Assert.Equal(200, result.StatusCode);
+
+        var dto = result.Value as TagDto;
+
+        Assert.NotNull(dto);
+        Assert.Equal(expDto, dto);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(8)]
+    [InlineData(11)]
+    public async Task GetTagById_ReturnsBadRequest(ushort tagId)
+    {
+        using var context = _fixture.CreateContext();
+        var controller = new TagsController(new TagsServices(context));
+
+        var result = (await controller.GetTagById(tagId)) as ObjectResult;
+
+        Assert.NotNull(result);
+        Assert.Equal(400, result.StatusCode);
+
+        var valResult = result.Value as Dictionary<string, object>;
+
+        Assert.NotNull(valResult);
+        Assert.True(valResult.ContainsKey(nameof(Tag.TagId)));
     }
 }
