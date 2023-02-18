@@ -1,6 +1,7 @@
 ﻿using Domain;
 using IntegrationTests.TestData;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Services.Tags;
 using Services.Tags.Dto;
 using WebAPI.Controllers;
@@ -303,5 +304,110 @@ public class TagsControllerTests : IClassFixture<TestDatabaseFixture>
 
         Assert.NotNull(valResult);
         Assert.True(valResult.ContainsKey(nameof(Tag.Name)));
+    }
+
+    [Theory]
+    [InlineData(1)]
+    [InlineData(3)]
+    [InlineData(7)]
+    public async Task SoftDeleteTag_ReturnsOk(ushort tagId)
+    {
+        using var context = _fixture.CreateContext();
+        context.Database.BeginTransaction();
+
+        var controller = new TagsController(new TagsServices(context));
+
+        var result = (await controller.SoftDeleteTag(tagId)) as StatusCodeResult;
+
+        context.ChangeTracker.Clear();
+
+        Assert.NotNull(result);
+        Assert.Equal(200, result.StatusCode);
+
+        Tag? tag;
+
+        tag = context.Tags.FirstOrDefault(tag => tag.TagId == tagId);
+
+        Assert.Null(tag);
+
+        tag = context.Tags.IgnoreQueryFilters().Single(tag => tag.TagId == tagId);
+
+        Assert.NotNull(tag);
+        Assert.True(tag.SoftDeleted);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(10)]
+    public async Task SoftDeleteTag_ReturnsBadRequest(ushort tagId)
+    {
+        using var context = _fixture.CreateContext();
+        context.Database.BeginTransaction();
+
+        var controller = new TagsController(new TagsServices(context));
+
+        var result = (await controller.SoftDeleteTag(tagId)) as ObjectResult;
+
+        context.ChangeTracker.Clear();
+
+        Assert.NotNull(result);
+        Assert.Equal(400, result.StatusCode);
+
+        var valResult = result.Value as Dictionary<string, object>;
+
+        Assert.NotNull(valResult);
+        Assert.True(valResult.ContainsKey(nameof(Tag.TagId)));
+    }
+
+    [Theory]
+    [InlineData(1)]
+    [InlineData(3)]
+    [InlineData(7)]
+    public async Task DeleteTag_ReturnsOk(ushort tagId)
+    {
+        using var context = _fixture.CreateContext();
+        context.Database.BeginTransaction();
+
+        var controller = new TagsController(new TagsServices(context));
+
+        var result = (await controller.DeleteTag(tagId)) as StatusCodeResult;
+
+        context.ChangeTracker.Clear();
+
+        Assert.NotNull(result);
+        Assert.Equal(200, result.StatusCode);
+
+        Tag? tag;
+
+        tag = context.Tags.FirstOrDefault(tag => tag.TagId == tagId);
+
+        Assert.Null(tag);
+
+        tag = context.Tags.IgnoreQueryFilters().FirstOrDefault(tag => tag.TagId == tagId);
+
+        Assert.Null(tag);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(10)]
+    public async Task DeleteTag_ReturnsBadRequest(ushort tagId)
+    {
+        using var context = _fixture.CreateContext();
+        context.Database.BeginTransaction();
+
+        var controller = new TagsController(new TagsServices(context));
+
+        var result = (await controller.DeleteTag(tagId)) as ObjectResult;
+
+        context.ChangeTracker.Clear();
+
+        Assert.NotNull(result);
+        Assert.Equal(400, result.StatusCode);
+
+        var valResult = result.Value as Dictionary<string, object>;
+
+        Assert.NotNull(valResult);
+        Assert.True(valResult.ContainsKey(nameof(Tag.TagId)));
     }
 }
