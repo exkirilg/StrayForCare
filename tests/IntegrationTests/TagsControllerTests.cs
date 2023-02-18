@@ -195,6 +195,8 @@ public class TagsControllerTests : IClassFixture<TestDatabaseFixture>
 
         var result = (await controller.NewTag(request)) as ObjectResult;
 
+        context.ChangeTracker.Clear();
+
         Assert.NotNull(result);
         Assert.Equal(400, result.StatusCode);
 
@@ -219,6 +221,80 @@ public class TagsControllerTests : IClassFixture<TestDatabaseFixture>
         var request = new NewTagRequest(name);
 
         var result = (await controller.NewTag(request)) as ObjectResult;
+
+        context.ChangeTracker.Clear();
+
+        Assert.NotNull(result);
+        Assert.Equal(400, result.StatusCode);
+
+        var valResult = result.Value as Dictionary<string, object>;
+
+        Assert.NotNull(valResult);
+        Assert.True(valResult.ContainsKey(nameof(Tag.Name)));
+    }
+
+    [Theory]
+    [InlineData(1, "Bat")]
+    [InlineData(3, "Cute turtle")]
+    [InlineData(7, "Raccoon")]
+    public async Task UpdateTagName_ReturnsOk(ushort tagId, string name)
+    {
+        using var context = _fixture.CreateContext();
+        context.Database.BeginTransaction();
+
+        var controller = new TagsController(new TagsServices(context));
+
+        var request = new UpdateTagNameRequest(tagId, name);
+        var result = (await controller.UpdateTagName(request)) as StatusCodeResult;
+
+        context.ChangeTracker.Clear();
+
+        Assert.NotNull(result);
+        Assert.Equal(200, result.StatusCode);
+
+        _ = context.Tags.Single(tag => tag.TagId == tagId && tag.Name == name);
+    }
+
+    [Theory]
+    [InlineData(3, "Cat")]
+    [InlineData(7, "Dog")]
+    public async Task UpdateTagName_ReturnsBadRequest_NameIsNotUnique(ushort tagId, string name)
+    {
+        using var context = _fixture.CreateContext();
+        context.Database.BeginTransaction();
+
+        var controller = new TagsController(new TagsServices(context));
+
+        var request = new UpdateTagNameRequest(tagId, name);
+        var result = (await controller.UpdateTagName(request)) as ObjectResult;
+
+        context.ChangeTracker.Clear();
+
+        Assert.NotNull(result);
+        Assert.Equal(400, result.StatusCode);
+
+        var valResult = result.Value as Dictionary<string, object>;
+
+        Assert.NotNull(valResult);
+        Assert.True(valResult.ContainsKey(nameof(Tag.Name)));
+    }
+
+    [Theory]
+    [InlineData(1, "")]
+    [InlineData(3, " ")]
+    [InlineData(2, "   ")]
+    [InlineData(7, "Name is too long for a Tag!")]
+    public async Task UpdateTagName_ReturnsBadRequest_NameIsNotValid(ushort tagId, string name)
+    {
+        using var context = _fixture.CreateContext();
+        context.Database.BeginTransaction();
+
+        var controller = new TagsController(new TagsServices(context));
+
+        var request = new UpdateTagNameRequest(tagId, name);
+        var result = (await controller.UpdateTagName(request)) as ObjectResult;
+
+        context.ChangeTracker.Clear();
 
         Assert.NotNull(result);
         Assert.Equal(400, result.StatusCode);
