@@ -1,4 +1,4 @@
-﻿using Domain;
+﻿using Domain.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -9,8 +9,7 @@ public class TagsConfiguration : IEntityTypeConfiguration<Tag>
     public void Configure(EntityTypeBuilder<Tag> builder)
     {
         builder
-            .Property(tag => tag.TagId)
-            .HasColumnType("smallint");
+            .Property(tag => tag.Id);
 
         builder
             .Property(tag => tag.Name)

@@ -1,4 +1,4 @@
-﻿using Domain;
+﻿using Domain.Models;
 using Services.Tags.DbAccess;
 using Services.Tags.Dto;
 
@@ -15,7 +15,7 @@ public class NewTagAction : ActionErrors, IActionAsync<NewTagRequest, Tag>
 
     public async Task<Tag> ActionAsync(NewTagRequest dto)
     {
-        Tag newTag = new(dto.Name);
+        Tag newTag = new() { Name = dto.Name };
 
         await _dbAccess.AddAsync(newTag);
 

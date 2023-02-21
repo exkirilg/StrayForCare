@@ -36,14 +36,14 @@ public class TagsController : ControllerBase
     /// <summary>
     /// Returns Tag with specified id
     /// </summary>
-    /// <param name="tagId"></param>
+    /// <param name="id"></param>
     /// <returns></returns>
     /// <response code="200"></response>
     /// <response code="400">No Tag found by provided id</response>
-    [HttpGet("{tagId}")]
-    public async Task<IActionResult> GetTagById(ushort tagId)
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetTagById(Guid id)
     {
-        TagDto? result = await _tagsServices.GetTagByIdAsync(tagId);
+        TagDto? result = await _tagsServices.GetTagByIdAsync(id);
 
         if (_tagsServices.HasErrors)
             return this.ParseServicesErrorsToResult(_tagsServices);
@@ -90,14 +90,14 @@ public class TagsController : ControllerBase
     /// <summary>
     /// Marks Tag as deleted
     /// </summary>
-    /// <param name="tagId"></param>
+    /// <param name="id"></param>
     /// <returns></returns>
     /// <response code="200"></response>
     /// <response code="400">No tag found by provided id</response>
-    [HttpPut("delete/{tagId}")]
-    public async Task<IActionResult> SoftDeleteTag(ushort tagId)
+    [HttpPut("delete/{id}")]
+    public async Task<IActionResult> SoftDeleteTag(Guid id)
     {
-        await _tagsServices.SoftDeleteAsync(tagId);
+        await _tagsServices.SoftDeleteAsync(id);
 
         if (_tagsServices.HasErrors)
             return this.ParseServicesErrorsToResult(_tagsServices);
@@ -108,14 +108,14 @@ public class TagsController : ControllerBase
     /// <summary>
     /// Deletes Tag from database
     /// </summary>
-    /// <param name="tagId"></param>
+    /// <param name="id"></param>
     /// <returns></returns>
     /// <response code="200"></response>
     /// <response code="400">No tag found by provided id</response>
-    [HttpDelete("{tagId}")]
-    public async Task<IActionResult> DeleteTag(ushort tagId)
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteTag(Guid id)
     {
-        await _tagsServices.DeleteAsync(tagId);
+        await _tagsServices.DeleteAsync(id);
 
         if (_tagsServices.HasErrors)
             return this.ParseServicesErrorsToResult(_tagsServices);

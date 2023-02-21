@@ -1,6 +1,6 @@
 ﻿namespace Services.Tags.Dto;
 
 public record UpdateTagNameRequest(
-    ushort TagId,
+    Guid Id,
     string Name
 );

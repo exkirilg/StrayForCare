@@ -1,9 +1,9 @@
-﻿using Domain;
+﻿using Domain.Models;
 using Services.Tags.DbAccess;
 
 namespace Services.Tags.Actions;
 
-public class SoftDeleteTagAction : ActionErrors, IActionAsync<ushort, Tag>
+public class SoftDeleteTagAction : ActionErrors, IActionAsync<Guid, Tag>
 {
     private readonly ITagsDbAccess _dbAccess;
 
@@ -12,9 +12,9 @@ public class SoftDeleteTagAction : ActionErrors, IActionAsync<ushort, Tag>
         _dbAccess = dbAccess;
     }
 
-    public async Task<Tag> ActionAsync(ushort tagId)
+    public async Task<Tag> ActionAsync(Guid id)
     {
-        Tag tag = await _dbAccess.GetTagByIdAsync(tagId);
+        Tag tag = await _dbAccess.GetTagByIdAsync(id);
 
         if (tag.SoftDeleted)
         {

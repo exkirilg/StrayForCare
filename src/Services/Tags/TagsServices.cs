@@ -1,5 +1,5 @@
 ﻿using DataAccess;
-using Domain;
+using Domain.Models;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using Services.Exceptions;
@@ -68,9 +68,9 @@ public class TagsServices : ITagsServices
         return result;
     }
 
-    public async Task<TagDto?> GetTagByIdAsync(ushort tagId)
+    public async Task<TagDto?> GetTagByIdAsync(Guid id)
     {
-        RunnerReadDbAsync<ushort, Tag> runner = new(
+        RunnerReadDbAsync<Guid, Tag> runner = new(
             new GetTagByIdAction(new TagsDbAccess(_context))
         );
 
@@ -78,7 +78,7 @@ public class TagsServices : ITagsServices
 
         try
         {
-            tag = await runner.RunActionAsync(tagId);
+            tag = await runner.RunActionAsync(id);
             if (runner.HasErrors) _errors.AddRange(runner.Errors);
         }
         catch (NoEntityFoundByIdException ex)
@@ -95,7 +95,7 @@ public class TagsServices : ITagsServices
         return TagDto.FromTag(tag);
     }
 
-    public async Task<ushort> NewTagAsync(NewTagRequest request)
+    public async Task<Guid> NewTagAsync(NewTagRequest request)
     {
         RunnerWriteDbAsync<NewTagRequest, Tag> runner = new (
             _context,
@@ -129,7 +129,7 @@ public class TagsServices : ITagsServices
         
         if (runner.HasErrors) return default;
 
-        return tag is not null ? tag.TagId : default;
+        return tag is not null ? tag.Id : default;
     }
 
     public async Task UpdateTagNameAsync(UpdateTagNameRequest request)
@@ -170,16 +170,16 @@ public class TagsServices : ITagsServices
         }
     }
 
-    public async Task SoftDeleteAsync(ushort tagId)
+    public async Task SoftDeleteAsync(Guid id)
     {
-        RunnerWriteDbAsync<ushort, Tag> runner = new(
+        RunnerWriteDbAsync<Guid, Tag> runner = new(
             _context,
             new SoftDeleteTagAction(new TagsDbAccess(_context))
         );
 
         try
         {
-            _ = await runner.RunActionAsync(tagId);
+            _ = await runner.RunActionAsync(id);
             if (runner.HasErrors) _errors.AddRange(runner.Errors);
         }
         catch (NoEntityFoundByIdException ex)
@@ -191,16 +191,16 @@ public class TagsServices : ITagsServices
         }
     }
 
-    public async Task DeleteAsync(ushort tagId)
+    public async Task DeleteAsync(Guid id)
     {
-        RunnerWriteDbAsync<ushort, Tag> runner = new(
+        RunnerWriteDbAsync<Guid, Tag> runner = new(
             _context,
             new DeleteTagAction(new TagsDbAccess(_context))
         );
 
         try
         {
-            _ = await runner.RunActionAsync(tagId);
+            _ = await runner.RunActionAsync(id);
             if (runner.HasErrors) _errors.AddRange(runner.Errors);
         }
         catch (NoEntityFoundByIdException ex)

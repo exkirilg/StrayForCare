@@ -1,5 +1,5 @@
 ﻿using DataAccess;
-using Domain;
+using Domain.Models;
 using Microsoft.EntityFrameworkCore;
 using Services.Exceptions;
 using Services.Queries;
@@ -37,14 +37,14 @@ public class TagsDbAccess : ITagsDbAccess
             .ToListAsync();
     }
 
-    public async Task<Tag> GetTagByIdAsync(ushort TagId)
+    public async Task<Tag> GetTagByIdAsync(Guid id)
     {
         Tag? result = await _context.Tags
             .IgnoreQueryFilters()
-            .FirstOrDefaultAsync(tag => tag.TagId == TagId);
+            .FirstOrDefaultAsync(tag => tag.Id == id);
 
         if (result is null)
-            throw new NoEntityFoundByIdException($"There is no Tag with id {TagId}", nameof(Tag.TagId));
+            throw new NoEntityFoundByIdException($"There is no Tag with id {id}", nameof(Tag.Id));
 
         return result;
     }

@@ -1,4 +1,4 @@
-﻿using Domain;
+﻿using Domain.Models;
 using Services.Tags.DbAccess;
 using Services.Tags.Dto;
 
@@ -15,7 +15,7 @@ public class UpdateTagNameAction : ActionErrors, IActionAsync<UpdateTagNameReque
 
     public async Task<Tag> ActionAsync(UpdateTagNameRequest dto)
     {
-        Tag tag = await _dbAccess.GetTagByIdAsync(dto.TagId);
+        Tag tag = await _dbAccess.GetTagByIdAsync(dto.Id);
 
         tag.Name = dto.Name;
 
