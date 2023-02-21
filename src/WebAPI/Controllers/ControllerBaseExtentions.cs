@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Services;
 
-namespace WebAPI;
+namespace WebAPI.Controllers;
 
 public static class ControllerBaseExtentions
 {

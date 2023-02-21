@@ -1,5 +1,5 @@
 ﻿using DataAccess;
-using Domain;
+using Domain.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 
@@ -50,13 +50,13 @@ public class TestDatabaseFixture
     {
         context.AddRange(new Tag[]
         {
-            new Tag("Cat"),
-            new Tag("Dog"),
-            new Tag("Starving"),
-            new Tag("Injured"),
-            new Tag("Sick"),
-            new Tag("Adoption"),
-            new Tag("Aggressive")
+            new Tag() { Name = "Cat" },
+            new Tag() { Name = "Dog" },
+            new Tag() { Name = "Starving" },
+            new Tag() { Name = "Injured" },
+            new Tag() { Name = "Sick" },
+            new Tag() { Name = "Adoption" },
+            new Tag() { Name = "Aggressive" }
         });
     }
 }

@@ -1,4 +1,4 @@
-﻿using Domain;
+﻿using Domain.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Services.Tags;
@@ -97,35 +97,31 @@ public class TagsControllerTests : IClassFixture<TestDatabaseFixture>
         EnsureCorrectBadRequestResult(result as ObjectResult, expProps);
     }
 
-    [Theory]
-    [InlineData(1)]
-    [InlineData(3)]
-    [InlineData(7)]
-    public async Task GetTagById_ReturnsOk(ushort tagId)
+    [Fact]
+    public async Task GetTagById_ReturnsOk()
     {
         using var context = _fixture.CreateContext();
         var controller = new TagsController(new TagsServices(context));
 
-        TagDto expDto = context.Tags.Where(tag => tag.TagId == tagId).Select(TagDto.FromTag).First();
+        IEnumerable<TagDto> tagsDto = context.Tags.Select(TagDto.FromTag).ToList();
 
-        var result = await controller.GetTagById(tagId);
-        var dto = EnsureCorrectOkObjectResultAndCorrectValue<TagDto>(result as ObjectResult);
+        foreach (TagDto expDto in tagsDto)
+        {
+            var result = await controller.GetTagById(expDto.Id);
+            var dto = EnsureCorrectOkObjectResultAndCorrectValue<TagDto>(result as ObjectResult);
 
-        Assert.Equal(expDto, dto);
+            Assert.Equal(expDto, dto);
+        }
     }
 
-    [Theory]
-    [InlineData(0)]
-    [InlineData(8)]
-    [InlineData(11)]
-    public async Task GetTagById_ReturnsBadRequest(ushort tagId)
+    [Fact]
+    public async Task GetTagById_ReturnsBadRequest()
     {
         using var context = _fixture.CreateContext();
         var controller = new TagsController(new TagsServices(context));
 
-        var result = await controller.GetTagById(tagId);
-
-        EnsureCorrectBadRequestResult(result as ObjectResult, nameof(Tag.TagId));
+        var result = await controller.GetTagById(Guid.NewGuid());
+        EnsureCorrectBadRequestResult(result as ObjectResult, nameof(Tag.Id));
     }
 
     [Theory]
@@ -181,16 +177,22 @@ public class TagsControllerTests : IClassFixture<TestDatabaseFixture>
     }
 
     [Theory]
-    [InlineData(1, "Bat")]
-    [InlineData(3, "Cute turtle")]
-    [InlineData(7, "Raccoon")]
-    public async Task UpdateTagName_ReturnsOk(ushort tagId, string name)
+    [InlineData("Bat")]
+    [InlineData("Cute turtle")]
+    [InlineData("Raccoon")]
+    public async Task UpdateTagName_ReturnsOk(string name)
     {
         using var context = _fixture.CreateContext();
         context.Database.BeginTransaction();
         var controller = new TagsController(new TagsServices(context));
 
-        var request = new UpdateTagNameRequest(tagId, name);
+        Random rand = new();
+        Guid id = context.Tags
+            .Select(tag => tag.Id)
+            .ToList()
+            .ElementAt(rand.Next(context.Tags.Count()));
+
+        var request = new UpdateTagNameRequest(id, name);
         
         var result = await controller.UpdateTagName(request);
 
@@ -198,119 +200,137 @@ public class TagsControllerTests : IClassFixture<TestDatabaseFixture>
 
         EnsureCorrectOkStatusCodeResult(result as StatusCodeResult);
 
-        _ = context.Tags.Single(tag => tag.TagId == tagId && tag.Name == name);
+        _ = context.Tags.Single(tag => tag.Id == id && tag.Name == name);
     }
 
-    [Theory]
-    [InlineData(3, "Cat")]
-    [InlineData(7, "Dog")]
-    public async Task UpdateTagName_ReturnsBadRequest_NameIsNotUnique(ushort tagId, string name)
+    [Fact]
+    public async Task UpdateTagName_ReturnsBadRequest_NameIsNotUnique()
     {
         using var context = _fixture.CreateContext();
         var controller = new TagsController(new TagsServices(context));
 
-        var request = new UpdateTagNameRequest(tagId, name);
-        
+        Random rand = new();
+        List<Tag> tags = context.Tags.ToList();
+
+        Guid id = tags
+            .Select(tag => tag.Id)
+            .ElementAt(rand.Next(tags.Count));
+
+        string name = tags
+            .Where(tag => tag.Id != id)
+            .Select(tag => tag.Name)
+            .First();
+
+        var request = new UpdateTagNameRequest(id, name);
         var result = await controller.UpdateTagName(request);
 
         EnsureCorrectBadRequestResult(result as ObjectResult, nameof(Tag.Name));
     }
 
     [Theory]
-    [InlineData(1, "")]
-    [InlineData(3, " ")]
-    [InlineData(2, "   ")]
-    [InlineData(7, "Name is too long for a Tag!")]
-    public async Task UpdateTagName_ReturnsBadRequest_NameIsNotValid(ushort tagId, string name)
+    [InlineData("")]
+    [InlineData(" ")]
+    [InlineData("   ")]
+    [InlineData("Name is too long for a Tag!")]
+    public async Task UpdateTagName_ReturnsBadRequest_NameIsNotValid(string name)
     {
         using var context = _fixture.CreateContext();
         var controller = new TagsController(new TagsServices(context));
 
-        var request = new UpdateTagNameRequest(tagId, name);
+        Random rand = new();
+        Guid id = context.Tags
+            .Select(tag => tag.Id)
+            .ToList()
+            .ElementAt(rand.Next(context.Tags.Count()));
+
+        var request = new UpdateTagNameRequest(id, name);
         
         var result = await controller.UpdateTagName(request);
 
         EnsureCorrectBadRequestResult(result as ObjectResult, nameof(Tag.Name));
     }
 
-    [Theory]
-    [InlineData(1)]
-    [InlineData(3)]
-    [InlineData(7)]
-    public async Task SoftDeleteTag_ReturnsOk(ushort tagId)
+    [Fact]
+    public async Task SoftDeleteTag_ReturnsOk()
     {
         using var context = _fixture.CreateContext();
         context.Database.BeginTransaction();
         var controller = new TagsController(new TagsServices(context));
 
-        var result = await controller.SoftDeleteTag(tagId);
+        Random rand = new();
+        
+        for (int i = 0; i < context.Tags.Count() * 2; i++)
+        {
+            Guid id = context.Tags
+                .Select(tag => tag.Id)
+                .ToList()
+                .ElementAt(rand.Next(context.Tags.Count()));
+
+            var result = await controller.SoftDeleteTag(id);
+
+            EnsureCorrectOkStatusCodeResult(result as StatusCodeResult);
+
+            // No tag with query filter
+            Assert.Null(
+                context.Tags.FirstOrDefault(tag => tag.Id == id)
+            );
+
+            // There is a tag with query filter ignored
+            Tag? tag = context.Tags.IgnoreQueryFilters().Single(tag => tag.Id == id);
+            Assert.NotNull(tag);
+            Assert.True(tag.SoftDeleted);
+        }
 
         context.ChangeTracker.Clear();
-
-        EnsureCorrectOkStatusCodeResult(result as StatusCodeResult);
-
-        // No tag with query filter
-        Assert.Null(
-            context.Tags.FirstOrDefault(tag => tag.TagId == tagId)
-        );
-
-        // There is a tag with query filter ignored
-        Tag? tag = context.Tags.IgnoreQueryFilters().Single(tag => tag.TagId == tagId);
-        Assert.NotNull(tag);
-        Assert.True(tag.SoftDeleted);
     }
 
-    [Theory]
-    [InlineData(0)]
-    [InlineData(10)]
-    public async Task SoftDeleteTag_ReturnsBadRequest(ushort tagId)
+    [Fact]
+    public async Task SoftDeleteTag_ReturnsBadRequest()
     {
         using var context = _fixture.CreateContext();
         var controller = new TagsController(new TagsServices(context));
 
-        var result = await controller.SoftDeleteTag(tagId);
+        var result = await controller.SoftDeleteTag(Guid.NewGuid());
 
-        EnsureCorrectBadRequestResult(result as ObjectResult, nameof(Tag.TagId));
+        EnsureCorrectBadRequestResult(result as ObjectResult, nameof(Tag.Id));
     }
 
-    [Theory]
-    [InlineData(1)]
-    [InlineData(3)]
-    [InlineData(7)]
-    public async Task DeleteTag_ReturnsOk(ushort tagId)
+    [Fact]
+    public async Task DeleteTag_ReturnsOk()
     {
         using var context = _fixture.CreateContext();
         context.Database.BeginTransaction();
         var controller = new TagsController(new TagsServices(context));
 
-        var result = await controller.DeleteTag(tagId);
+        foreach (Guid id in context.Tags.Select(tag => tag.Id).ToList())
+        {
+            var result = await controller.DeleteTag(id);
+
+            EnsureCorrectOkStatusCodeResult(result as StatusCodeResult);
+
+            // No tag with query filter
+            Assert.Null(
+                context.Tags.FirstOrDefault(tag => tag.Id == id)
+            );
+
+            // No tag with query filter ignored
+            Assert.Null(
+                context.Tags.IgnoreQueryFilters().FirstOrDefault(tag => tag.Id == id)
+            );
+        }
 
         context.ChangeTracker.Clear();
-
-        EnsureCorrectOkStatusCodeResult(result as StatusCodeResult);
-
-        // No tag with query filter
-        Assert.Null(
-            context.Tags.FirstOrDefault(tag => tag.TagId == tagId)
-        );
-
-        // No tag with query filter ignored
-        Assert.Null(
-            context.Tags.IgnoreQueryFilters().FirstOrDefault(tag => tag.TagId == tagId)
-        );
     }
 
-    [Theory]
-    [InlineData(0)]
-    [InlineData(10)]
-    public async Task DeleteTag_ReturnsBadRequest(ushort tagId)
+    [Fact]
+    public async Task DeleteTag_ReturnsBadRequest()
     {
         using var context = _fixture.CreateContext();
         var controller = new TagsController(new TagsServices(context));
 
-        var result = await controller.DeleteTag(tagId);
+        var result = await controller.DeleteTag(Guid.NewGuid());
 
-        EnsureCorrectBadRequestResult(result as ObjectResult, nameof(Tag.TagId));
+        EnsureCorrectBadRequestResult(result as ObjectResult, nameof(Tag.Id));
     }
 
     private TVal EnsureCorrectOkObjectResultAndCorrectValue<TVal>(ObjectResult? result)

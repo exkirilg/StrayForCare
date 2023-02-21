@@ -1,28 +1,15 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace Domain;
+namespace Domain.Models;
 
-public class Tag : IComparable<Tag>, IValidatableObject
+public class Tag : BaseEntity, IComparable<Tag>, IValidatableObject
 {
     private string _name = string.Empty;
-
-    public ushort TagId { get; private set; }
 
     public string Name
     {
         get => _name;
         set => _name = value.Trim();
-    }
-
-    public bool SoftDeleted { get; set; }
-
-    private Tag()
-    {
-    }
-
-    public Tag(string name)
-    {
-        Name = name;
     }
 
     public int CompareTo(Tag? other)

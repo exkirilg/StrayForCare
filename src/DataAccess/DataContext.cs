@@ -1,5 +1,6 @@
 ﻿using DataAccess.EntitiesConfigurations;
 using Domain;
+using Domain.Models;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Immutable;
 using System.ComponentModel.DataAnnotations;

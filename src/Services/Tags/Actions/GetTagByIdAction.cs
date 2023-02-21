@@ -1,9 +1,9 @@
-﻿using Domain;
+﻿using Domain.Models;
 using Services.Tags.DbAccess;
 
 namespace Services.Tags.Actions;
 
-public class GetTagByIdAction : ActionErrors, IActionAsync<ushort, Tag>
+public class GetTagByIdAction : ActionErrors, IActionAsync<Guid, Tag>
 {
     private readonly ITagsDbAccess _dbAccess;
 
@@ -12,8 +12,8 @@ public class GetTagByIdAction : ActionErrors, IActionAsync<ushort, Tag>
         _dbAccess = dbAccess;
     }
 
-    public async Task<Tag> ActionAsync(ushort tagId)
+    public async Task<Tag> ActionAsync(Guid id)
     {
-        return await _dbAccess.GetTagByIdAsync(tagId);
+        return await _dbAccess.GetTagByIdAsync(id);
     }
 }

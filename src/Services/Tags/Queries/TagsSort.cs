@@ -1,4 +1,4 @@
-﻿using Domain;
+﻿using Domain.Models;
 
 namespace Services.Tags.Queries;
 
