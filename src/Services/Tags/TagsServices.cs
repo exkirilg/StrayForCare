@@ -7,27 +7,14 @@ using Services.Runners;
 using Services.Tags.Actions;
 using Services.Tags.DbAccess;
 using Services.Tags.Dto;
-using System.Collections.Immutable;
 using System.ComponentModel.DataAnnotations;
 
 namespace Services.Tags;
 
-public class TagsServices : ITagsServices
+public class TagsServices : ServicesErrors, ITagsServices
 {
-    private readonly DataContext _context;
-    private readonly List<ValidationResult> _errors = new();
-
-    public IImmutableList<ValidationResult> Errors => _errors.ToImmutableList();
-    public bool HasErrors => _errors.Any();
-
-    public TagsServices(DataContext context)
+    public TagsServices(DataContext context) : base(context)
     {
-        _context = context;
-    }
-
-    public void ClearErrors()
-    {
-        _errors.Clear();
     }
 
     public async Task<IEnumerable<TagDto>> GetTagsWithPagination(GetTagsRequest request)

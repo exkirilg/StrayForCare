@@ -44,7 +44,7 @@ public class TagsDbAccess : ITagsDbAccess
             .FirstOrDefaultAsync(tag => tag.Id == id);
 
         if (result is null)
-            throw new NoEntityFoundByIdException($"There is no Tag with id {id}", nameof(Tag.Id));
+            throw new NoEntityFoundByIdException($"There is no {nameof(Tag)} with id {id}", nameof(Tag.Id));
 
         return result;
     }
