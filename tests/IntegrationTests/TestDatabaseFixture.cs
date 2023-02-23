@@ -30,6 +30,7 @@ public class TestDatabaseFixture
                     context.Database.EnsureDeleted();
                     context.Database.EnsureCreated();
 
+                    SeedIssuesTestData(context);
                     SeedTagsTestData(context);
 
                     context.SaveChanges();
@@ -47,6 +48,24 @@ public class TestDatabaseFixture
                     _configuration.GetConnectionString("AppDataConnection"),
                     x => x.UseNetTopologySuite())
                 .Options);
+
+    private void SeedIssuesTestData(DataContext context)
+    {
+        List<Issue> issues = new();
+
+        Issue issue;
+
+        issue = new Issue()
+        {
+            Title = "Very cute stray kitten for adoption",
+            Description = "I've just found an adorable kitten on the street, it would be so nice if someone would take care of it!"
+        };
+        issue.SetLocation(44.616615916982816, 33.525392803570526);
+
+        issues.Add(issue);
+
+        context.AddRange(issues);
+    }
 
     private void SeedTagsTestData(DataContext context)
     {

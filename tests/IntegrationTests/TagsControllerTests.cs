@@ -7,13 +7,10 @@ using WebAPI.Controllers;
 
 namespace IntegrationTests;
 
-public class TagsControllerTests : IClassFixture<TestDatabaseFixture>
+public class TagsControllerTests : BasicContorllerTests
 {
-	private readonly TestDatabaseFixture _fixture;
-
-	public TagsControllerTests(TestDatabaseFixture fixture)
+	public TagsControllerTests(TestDatabaseFixture fixture) : base(fixture)
 	{
-        _fixture = fixture;
 	}
 
 	[Theory]
@@ -331,38 +328,5 @@ public class TagsControllerTests : IClassFixture<TestDatabaseFixture>
         var result = await controller.DeleteTag(Guid.NewGuid());
 
         EnsureCorrectBadRequestResult(result as ObjectResult, nameof(Tag.Id));
-    }
-
-    private TVal EnsureCorrectOkObjectResultAndCorrectValue<TVal>(ObjectResult? result)
-        where TVal : class
-    {
-        Assert.NotNull(result);
-        Assert.Equal(200, result.StatusCode);
-
-        var value = result.Value as TVal;
-
-        Assert.NotNull(value);
-
-        return value;
-    }
-
-    private void EnsureCorrectOkStatusCodeResult(StatusCodeResult? result)
-    {
-        Assert.NotNull(result);
-        Assert.Equal(200, result.StatusCode);
-    }
-
-    private void EnsureCorrectBadRequestResult(ObjectResult? result, string? expProps = default)
-    {
-        Assert.NotNull(result);
-        Assert.Equal(400, result.StatusCode);
-
-        if (expProps is null) return;
-
-        var valResult = result.Value as Dictionary<string, object>;
-
-        Assert.NotNull(valResult);
-        foreach (var expProp in expProps.Split(',', StringSplitOptions.None))
-            Assert.True(valResult.ContainsKey(expProp));
     }
 }
