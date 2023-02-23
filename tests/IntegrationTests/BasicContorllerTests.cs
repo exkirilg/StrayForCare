@@ -1,14 +1,18 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using DataAccess;
+using Microsoft.AspNetCore.Mvc;
 
 namespace IntegrationTests;
 
-public abstract class BasicContorllerTests : IClassFixture<TestDatabaseFixture>
+public abstract class BasicControllerTests<TController>
+    : IDisposable, IClassFixture<TestDatabaseFixture>
+    where TController : ControllerBase
 {
-    protected readonly TestDatabaseFixture _fixture;
+    protected DataContext _context = null!;
+    protected TController _controller = null!;
 
-    public BasicContorllerTests(TestDatabaseFixture fixture)
+    public void Dispose()
     {
-        _fixture = fixture;
+        _context.Dispose();
     }
 
     protected TVal EnsureCorrectOkObjectResultAndCorrectValue<TVal>(ObjectResult? result)

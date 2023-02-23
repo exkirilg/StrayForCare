@@ -41,4 +41,35 @@ public class IssuesServices : ServicesErrors, IIssuesServices
 
         return new IssueDto(issues);
     }
+
+    public async Task<Guid> NewIssueAsync(NewIssueRequest request)
+    {
+        RunnerWriteDbAsync<NewIssueRequest, Issue> runner = new(
+            _context,
+            new NewIssueAction(new IssuesDbAccess(_context))
+        );
+
+        Issue? issue = null;
+
+        try
+        {
+            issue = await runner.RunActionAsync(request);
+            if (runner.HasErrors) _errors.AddRange(runner.Errors);
+        }
+        catch (ArgumentOutOfRangeException ex)
+        {
+            if (ex.ParamName == "latitude" || ex.ParamName == "longitude")
+            {
+                _errors.Add(
+                    new ValidationResult(
+                        ex.Message,
+                        new string[] { ex.ParamName }));
+            }
+            else throw;
+        }
+
+        if (runner.HasErrors) return default;
+
+        return issue is not null ? issue.Id : default;
+    }
 }

@@ -7,13 +7,17 @@ using WebAPI.Controllers;
 
 namespace IntegrationTests;
 
-public class TagsControllerTests : BasicContorllerTests
+public class TagsControllerTests : BasicControllerTests<TagsController>
 {
-	public TagsControllerTests(TestDatabaseFixture fixture) : base(fixture)
+	public TagsControllerTests(TestDatabaseFixture fixture)
 	{
-	}
+        _context = fixture.CreateContext();
+        _controller = new TagsController(new TagsServices(_context));
+    }
 
-	[Theory]
+    #region Get with pagination
+
+    [Theory]
 	[InlineData(5, 1, false)]
     [InlineData(5, 2, false)]
     [InlineData(5, 3, false)]
@@ -22,19 +26,16 @@ public class TagsControllerTests : BasicContorllerTests
     [InlineData(5, 3, true)]
     public async Task GetTagsWithPagination_ReturnsOk(int pageSize, int pageNum, bool desc)
 	{
-        using var context = _fixture.CreateContext();
-        var controller = new TagsController(new TagsServices(context));
-        
         GetTagsRequest request = new(pageSize, pageNum, Descending: desc);
 
-        IQueryable<Tag> query = context.Tags;
+        IQueryable<Tag> query = _context.Tags;
         if (desc) query = query.OrderByDescending(tag => tag.Name);
         else query = query.OrderBy(tag => tag.Name);
         query = query.Skip(pageSize * (pageNum - 1)).Take(pageSize);
 
         IEnumerable<TagDto> expCollection = query.Select(tag => new TagDto(tag)).ToList();
 
-        var result = await controller.GetTagsWithPagination(request);
+        var result = await _controller.GetTagsWithPagination(request);
         var collection = EnsureCorrectOkObjectResultAndCorrectValue<IEnumerable<TagDto>>(result as ObjectResult);
 
         Assert.Equal(expCollection.Count(), collection.Count());        
@@ -50,18 +51,15 @@ public class TagsControllerTests : BasicContorllerTests
     [InlineData("cute turtle")]
     public async Task GetTagsWithPagination_ReturnsOkWithNameSearch(string nameSearch)
     {
-        using var context = _fixture.CreateContext();
-        var controller = new TagsController(new TagsServices(context));
-        
-        GetTagsRequest request = new(context.Tags.Count(), 1, nameSearch);
+        GetTagsRequest request = new(_context.Tags.Count(), 1, nameSearch);
 
-        IEnumerable<TagDto> expCollection = context.Tags
+        IEnumerable<TagDto> expCollection = _context.Tags
             .Where(tag => tag.Name.ToLower().Contains(nameSearch.ToLower()))
             .OrderBy(tag => tag.Name)
             .Select(tag => new TagDto(tag))
             .ToList();
 
-        var result = await controller.GetTagsWithPagination(request);
+        var result = await _controller.GetTagsWithPagination(request);
         var collection = EnsureCorrectOkObjectResultAndCorrectValue<IEnumerable<TagDto>>(result as ObjectResult);
 
         Assert.Equal(expCollection, collection);
@@ -76,9 +74,6 @@ public class TagsControllerTests : BasicContorllerTests
     [InlineData(1, -1)]
     public async Task GetTagsWithPagination_ReturnsBadRequest(int pageSize, int pageNum)
     {
-        using var context = _fixture.CreateContext();
-        var controller = new TagsController(new TagsServices(context));
-        
         GetTagsRequest request = new(pageSize, pageNum);
 
         string? expProps = default;
@@ -89,22 +84,23 @@ public class TagsControllerTests : BasicContorllerTests
         else if (pageNum <= 0)
             expProps = nameof(GetTagsRequest.PageNum);
 
-        var result = await controller.GetTagsWithPagination(request);
+        var result = await _controller.GetTagsWithPagination(request);
 
         EnsureCorrectBadRequestResult(result as ObjectResult, expProps);
     }
 
+    #endregion
+
+    #region Get by id
+
     [Fact]
     public async Task GetTagById_ReturnsOk()
     {
-        using var context = _fixture.CreateContext();
-        var controller = new TagsController(new TagsServices(context));
-
-        IEnumerable<TagDto> tagsDto = context.Tags.Select(tag => new TagDto(tag)).ToList();
+        IEnumerable<TagDto> tagsDto = _context.Tags.Select(tag => new TagDto(tag)).ToList();
 
         foreach (TagDto expDto in tagsDto)
         {
-            var result = await controller.GetTagById(expDto.Id);
+            var result = await _controller.GetTagById(expDto.Id);
             var dto = EnsureCorrectOkObjectResultAndCorrectValue<TagDto>(result as ObjectResult);
 
             Assert.Equal(expDto, dto);
@@ -114,12 +110,13 @@ public class TagsControllerTests : BasicContorllerTests
     [Fact]
     public async Task GetTagById_ReturnsBadRequest()
     {
-        using var context = _fixture.CreateContext();
-        var controller = new TagsController(new TagsServices(context));
-
-        var result = await controller.GetTagById(Guid.NewGuid());
+        var result = await _controller.GetTagById(Guid.NewGuid());
         EnsureCorrectBadRequestResult(result as ObjectResult, nameof(Tag.Id));
     }
+
+    #endregion
+
+    #region New
 
     [Theory]
     [InlineData("Bat")]
@@ -127,18 +124,16 @@ public class TagsControllerTests : BasicContorllerTests
     [InlineData("Raccoon")]
     public async Task NewTag_ReturnsOk(string name)
     {
-        using var context = _fixture.CreateContext();
-        context.Database.BeginTransaction();
-        var controller = new TagsController(new TagsServices(context));
-
+        _context.Database.BeginTransaction();
+        
         var request = new NewTagRequest(name);
-        var result = await controller.NewTag(request);
+        var result = await _controller.NewTag(request);
 
-        context.ChangeTracker.Clear();
+        _context.ChangeTracker.Clear();
 
         EnsureCorrectOkStatusCodeResult(result as StatusCodeResult);
 
-        _ = context.Tags.Single(tag => tag.Name == name);
+        _ = _context.Tags.Single(tag => tag.Name == name);
     }
 
     [Theory]
@@ -146,12 +141,9 @@ public class TagsControllerTests : BasicContorllerTests
     [InlineData("Dog")]
     public async Task NewTag_ReturnsBadRequest_NameIsNotUnique(string name)
     {
-        using var context = _fixture.CreateContext();
-        var controller = new TagsController(new TagsServices(context));
-
         var request = new NewTagRequest(name);
 
-        var result = await controller.NewTag(request);
+        var result = await _controller.NewTag(request);
 
         EnsureCorrectBadRequestResult(result as ObjectResult, nameof(Tag.Name));
     }
@@ -163,15 +155,16 @@ public class TagsControllerTests : BasicContorllerTests
     [InlineData("Name is too long for a Tag!")]
     public async Task NewTag_ReturnsBadRequest_NameIsNotValid(string name)
     {
-        using var context = _fixture.CreateContext();
-        var controller = new TagsController(new TagsServices(context));
-
         var request = new NewTagRequest(name);
 
-        var result = await controller.NewTag(request);
+        var result = await _controller.NewTag(request);
 
         EnsureCorrectBadRequestResult(result as ObjectResult, nameof(Tag.Name));
     }
+
+    #endregion
+
+    #region Update
 
     [Theory]
     [InlineData("Bat")]
@@ -179,35 +172,30 @@ public class TagsControllerTests : BasicContorllerTests
     [InlineData("Raccoon")]
     public async Task UpdateTagName_ReturnsOk(string name)
     {
-        using var context = _fixture.CreateContext();
-        context.Database.BeginTransaction();
-        var controller = new TagsController(new TagsServices(context));
-
+        _context.Database.BeginTransaction();
+        
         Random rand = new();
-        Guid id = context.Tags
+        Guid id = _context.Tags
             .Select(tag => tag.Id)
             .ToList()
-            .ElementAt(rand.Next(context.Tags.Count()));
+            .ElementAt(rand.Next(_context.Tags.Count()));
 
         var request = new UpdateTagNameRequest(id, name);
         
-        var result = await controller.UpdateTagName(request);
+        var result = await _controller.UpdateTagName(request);
 
-        context.ChangeTracker.Clear();
+        _context.ChangeTracker.Clear();
 
         EnsureCorrectOkStatusCodeResult(result as StatusCodeResult);
 
-        _ = context.Tags.Single(tag => tag.Id == id && tag.Name == name);
+        _ = _context.Tags.Single(tag => tag.Id == id && tag.Name == name);
     }
 
     [Fact]
     public async Task UpdateTagName_ReturnsBadRequest_NameIsNotUnique()
     {
-        using var context = _fixture.CreateContext();
-        var controller = new TagsController(new TagsServices(context));
-
         Random rand = new();
-        List<Tag> tags = context.Tags.ToList();
+        List<Tag> tags = _context.Tags.ToList();
 
         Guid id = tags
             .Select(tag => tag.Id)
@@ -219,7 +207,7 @@ public class TagsControllerTests : BasicContorllerTests
             .First();
 
         var request = new UpdateTagNameRequest(id, name);
-        var result = await controller.UpdateTagName(request);
+        var result = await _controller.UpdateTagName(request);
 
         EnsureCorrectBadRequestResult(result as ObjectResult, nameof(Tag.Name));
     }
@@ -231,102 +219,99 @@ public class TagsControllerTests : BasicContorllerTests
     [InlineData("Name is too long for a Tag!")]
     public async Task UpdateTagName_ReturnsBadRequest_NameIsNotValid(string name)
     {
-        using var context = _fixture.CreateContext();
-        var controller = new TagsController(new TagsServices(context));
-
         Random rand = new();
-        Guid id = context.Tags
+        Guid id = _context.Tags
             .Select(tag => tag.Id)
             .ToList()
-            .ElementAt(rand.Next(context.Tags.Count()));
+            .ElementAt(rand.Next(_context.Tags.Count()));
 
         var request = new UpdateTagNameRequest(id, name);
         
-        var result = await controller.UpdateTagName(request);
+        var result = await _controller.UpdateTagName(request);
 
         EnsureCorrectBadRequestResult(result as ObjectResult, nameof(Tag.Name));
     }
 
+    #endregion
+
+    #region Soft delete
+
     [Fact]
     public async Task SoftDeleteTag_ReturnsOk()
     {
-        using var context = _fixture.CreateContext();
-        context.Database.BeginTransaction();
-        var controller = new TagsController(new TagsServices(context));
-
+        _context.Database.BeginTransaction();
+        
         Random rand = new();
         
-        for (int i = 0; i < context.Tags.Count() * 2; i++)
+        for (int i = 0; i < _context.Tags.Count() * 2; i++)
         {
-            Guid id = context.Tags
+            Guid id = _context.Tags
                 .Select(tag => tag.Id)
                 .ToList()
-                .ElementAt(rand.Next(context.Tags.Count()));
+                .ElementAt(rand.Next(_context.Tags.Count()));
 
-            var result = await controller.SoftDeleteTag(id);
+            var result = await _controller.SoftDeleteTag(id);
 
             EnsureCorrectOkStatusCodeResult(result as StatusCodeResult);
 
             // No tag with query filter
             Assert.Null(
-                context.Tags.FirstOrDefault(tag => tag.Id == id)
+                _context.Tags.FirstOrDefault(tag => tag.Id == id)
             );
 
             // There is a tag with query filter ignored
-            Tag? tag = context.Tags.IgnoreQueryFilters().Single(tag => tag.Id == id);
+            Tag? tag = _context.Tags.IgnoreQueryFilters().Single(tag => tag.Id == id);
             Assert.NotNull(tag);
             Assert.True(tag.SoftDeleted);
         }
 
-        context.ChangeTracker.Clear();
+        _context.ChangeTracker.Clear();
     }
 
     [Fact]
     public async Task SoftDeleteTag_ReturnsBadRequest()
     {
-        using var context = _fixture.CreateContext();
-        var controller = new TagsController(new TagsServices(context));
-
-        var result = await controller.SoftDeleteTag(Guid.NewGuid());
+        var result = await _controller.SoftDeleteTag(Guid.NewGuid());
 
         EnsureCorrectBadRequestResult(result as ObjectResult, nameof(Tag.Id));
     }
 
+    #endregion
+
+    #region Delete
+
     [Fact]
     public async Task DeleteTag_ReturnsOk()
     {
-        using var context = _fixture.CreateContext();
-        context.Database.BeginTransaction();
-        var controller = new TagsController(new TagsServices(context));
-
-        foreach (Guid id in context.Tags.Select(tag => tag.Id).ToList())
+        _context.Database.BeginTransaction();
+        
+        foreach (Guid id in _context.Tags.Select(tag => tag.Id).ToList())
         {
-            var result = await controller.DeleteTag(id);
+            var result = await _controller.DeleteTag(id);
 
             EnsureCorrectOkStatusCodeResult(result as StatusCodeResult);
 
             // No tag with query filter
             Assert.Null(
-                context.Tags.FirstOrDefault(tag => tag.Id == id)
+                _context.Tags.FirstOrDefault(tag => tag.Id == id)
             );
 
             // No tag with query filter ignored
             Assert.Null(
-                context.Tags.IgnoreQueryFilters().FirstOrDefault(tag => tag.Id == id)
+                _context.Tags.IgnoreQueryFilters().FirstOrDefault(tag => tag.Id == id)
             );
         }
 
-        context.ChangeTracker.Clear();
+        _context.ChangeTracker.Clear();
     }
 
     [Fact]
     public async Task DeleteTag_ReturnsBadRequest()
     {
-        using var context = _fixture.CreateContext();
-        var controller = new TagsController(new TagsServices(context));
-
-        var result = await controller.DeleteTag(Guid.NewGuid());
+        var result = await _controller.DeleteTag(Guid.NewGuid());
 
         EnsureCorrectBadRequestResult(result as ObjectResult, nameof(Tag.Id));
     }
+
+    #endregion
 }

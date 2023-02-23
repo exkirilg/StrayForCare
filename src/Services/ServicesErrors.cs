@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Services;
 
-public abstract class ServicesErrors
+public abstract class ServicesErrors : IServicesErrors
 {
     protected readonly DataContext _context;
     protected readonly List<ValidationResult> _errors = new();

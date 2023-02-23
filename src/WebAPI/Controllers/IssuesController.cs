@@ -32,4 +32,22 @@ public class IssuesController : ControllerBase
 
         return Ok(result);
     }
+
+    /// <summary>
+    /// Creates new Issue
+    /// </summary>
+    /// <param name="request"></param>
+    /// <returns></returns>
+    /// <response code="200"></response>
+    /// <response code="400">Request validation error</response>
+    [HttpPost]
+    public async Task<IActionResult> NewIssue(NewIssueRequest request)
+    {
+        await _issuesServices.NewIssueAsync(request);
+
+        if (_issuesServices.HasErrors)
+            return this.ParseServicesErrorsToResult(_issuesServices);
+
+        return Ok();
+    }
 }

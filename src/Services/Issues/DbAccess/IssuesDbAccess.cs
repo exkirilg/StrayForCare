@@ -25,4 +25,9 @@ public class IssuesDbAccess : IIssuesDbAccess
 
         return result;
     }
+
+    public async Task AddAsync(Issue newIssue)
+    {
+        await _context.AddAsync(newIssue);
+    }
 }

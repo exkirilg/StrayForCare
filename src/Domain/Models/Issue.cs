@@ -48,13 +48,6 @@ public class Issue : BaseEntity, IValidatableObject
             );
         }
 
-        if (string.IsNullOrWhiteSpace(Description))
-        {
-            yield return new ValidationResult(
-                "Description must be filled", new string[] { nameof(Description) }
-            );
-        }
-
         if (Description.Length > 2500)
         {
             yield return new ValidationResult(

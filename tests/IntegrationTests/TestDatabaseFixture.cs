@@ -60,7 +60,7 @@ public class TestDatabaseFixture
             Title = "Very cute stray kitten for adoption",
             Description = "I've just found an adorable kitten on the street, it would be so nice if someone would take care of it!"
         };
-        issue.SetLocation(44.616615916982816, 33.525392803570526);
+        issue.SetLocation(33.525392803570526, 44.616615916982816);
 
         issues.Add(issue);
 

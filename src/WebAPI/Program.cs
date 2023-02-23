@@ -39,7 +39,7 @@ builder.Services.AddDbContext<DataContext>(options =>
     );
 });
 
-builder.Services.AddScoped<IssuesServices, IssuesServices>();
+builder.Services.AddScoped<IIssuesServices, IssuesServices>();
 builder.Services.AddScoped<ITagsServices, TagsServices>();
 
 var app = builder.Build();
