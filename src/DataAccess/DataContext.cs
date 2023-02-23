@@ -13,6 +13,7 @@ public class DataContext : DbContext
 	{
 	}
 
+    public DbSet<Issue> Issues { get; set; } = null!;
 	public DbSet<Tag> Tags { get; set; } = null!;
 
     public async Task<IImmutableList<ValidationResult>> SaveChangesWithValidationAsync()
@@ -48,6 +49,7 @@ public class DataContext : DbContext
     {
 		modelBuilder
 			.HasPostgresExtension("postgis")
+            .ApplyConfiguration(new IssuesConfiguration())
 			.ApplyConfiguration(new TagsConfiguration());
     }
 }

@@ -29,7 +29,7 @@ public class Tag : BaseEntity, IComparable<Tag>, IValidatableObject
         if (Name.Length > 20)
         {
             yield return new ValidationResult(
-                "Name length must not exceed 20 characters", new string[] { nameof(Name) }
+                $"Name length must not exceed {20} characters", new string[] { nameof(Name) }
             );
         }
     }

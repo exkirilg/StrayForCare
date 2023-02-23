@@ -4,12 +4,11 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace DataAccess.EntitiesConfigurations;
 
-public class TagsConfiguration : IEntityTypeConfiguration<Tag>
+public class TagsConfiguration : BaseEntityConfiguration<Tag>
 {
-    public void Configure(EntityTypeBuilder<Tag> builder)
+    public override void Configure(EntityTypeBuilder<Tag> builder)
     {
-        builder
-            .Property(tag => tag.Id);
+        base.Configure(builder);
 
         builder
             .Property(tag => tag.Name)
@@ -20,8 +19,5 @@ public class TagsConfiguration : IEntityTypeConfiguration<Tag>
         builder
             .HasIndex(tag => tag.Name)
             .IsUnique();
-
-        builder
-            .HasQueryFilter(tag => !tag.SoftDeleted);
     }
 }
