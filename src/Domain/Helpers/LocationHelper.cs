@@ -2,11 +2,11 @@
 
 namespace Domain.Helpers;
 
-public class GeodataHelper
+public class LocationHelper
 {
     public const short SRID = 4326;
 
-    public static Point DefaultLocation => new Point(0, 0) { SRID = SRID };
+    public static Point DefaultLocation => new(0, 0) { SRID = SRID };
 
     public static Point CreateLocationByCoordinates(double latitude, double longitude)
     {

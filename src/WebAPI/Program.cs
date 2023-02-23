@@ -1,6 +1,7 @@
 using DataAccess;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
+using Services.Issues;
 using Services.Tags;
 using System.Reflection;
 
@@ -38,6 +39,7 @@ builder.Services.AddDbContext<DataContext>(options =>
     );
 });
 
+builder.Services.AddScoped<IssuesServices, IssuesServices>();
 builder.Services.AddScoped<ITagsServices, TagsServices>();
 
 var app = builder.Build();

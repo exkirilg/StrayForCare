@@ -8,7 +8,7 @@ public class Issue : BaseEntity, IValidatableObject
 {
     private readonly DateTime _createdAt = DateTime.UtcNow;
     private string _title = string.Empty;
-    private Point _location = GeodataHelper.DefaultLocation;
+    private Point _location = LocationHelper.DefaultLocation;
     private string _description = string.Empty;
 
     public DateTime CreatedAt => _createdAt;
@@ -29,7 +29,7 @@ public class Issue : BaseEntity, IValidatableObject
 
     public void SetLocation(double latitude, double longitude)
     {
-        _location = GeodataHelper.CreateLocationByCoordinates(latitude, longitude);
+        _location = LocationHelper.CreateLocationByCoordinates(latitude, longitude);
     }
 
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
