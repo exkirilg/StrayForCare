@@ -16,6 +16,6 @@ public class LocationHelper
         if (longitude < -180 || longitude > 180)
             throw new ArgumentOutOfRangeException(nameof(longitude), longitude, "Longitude must be in range [-180, 180]");
 
-        return new Point(latitude, longitude) { SRID = SRID };
+        return new Point(longitude, latitude) { SRID = SRID };
     }
 }

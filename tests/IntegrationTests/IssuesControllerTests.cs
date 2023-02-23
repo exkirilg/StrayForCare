@@ -70,8 +70,8 @@ public class IssuesControllerTests : BasicControllerTests<IssuesController>
             .ToList()
             .Single(issue =>
                 issue.Title == title
-                && issue.Location.X == latitude
-                && issue.Location.Y == longitude
+                && issue.Location.Y == latitude
+                && issue.Location.X == longitude
                 && issue.Description == description
             );
     }
@@ -129,6 +129,142 @@ public class IssuesControllerTests : BasicControllerTests<IssuesController>
         var request = new NewIssueRequest("Test", 0, longitude, string.Empty);
 
         var result = await _controller.NewIssue(request);
+
+        EnsureCorrectBadRequestResult(result as ObjectResult, "longitude");
+    }
+
+    #endregion
+
+    #region Update
+
+    [Theory]
+    [InlineData(
+        "Little angry bat!",
+        30.581892679392492, 114.30187275909799,
+        "Found very angry (possibly rabid) bat. What should I do?")]
+    [InlineData(
+        "Alligator",
+        30.840029824446415, -91.57459647273839,
+        "It's just an alligatoor, nothing unusual, move along.")]
+    [InlineData(
+        "Raccoon",
+        40.13703517080637, -83.11514198958723,
+        "Raccoon has stolen my garbage!")]
+    public async Task UpdateIssue_ReturnsOk(string title, double latitude, double longitude, string description)
+    {
+        _context.Database.BeginTransaction();
+
+        Random rand = new();
+        Guid id = _context.Issues
+            .Select(issue => issue.Id)
+            .ToList()
+            .ElementAt(rand.Next(_context.Issues.Count()));
+
+        var request = new UpdateIssueRequest(id, title, latitude, longitude, description);
+
+        var result = await _controller.UpdateIssue(request);
+
+        _context.ChangeTracker.Clear();
+
+        EnsureCorrectOkStatusCodeResult(result as StatusCodeResult);
+
+        _ = _context.Issues
+            .ToList()
+            .Single(issue =>
+                issue.Title == title
+                && issue.Location.Y == latitude
+                && issue.Location.X == longitude
+                && issue.Description == description
+            );
+    }
+
+    [Fact]
+    public async Task UpdateIssue_ReturnsBadRequest_NoIssueById()
+    {
+        var request = new UpdateIssueRequest(Guid.NewGuid(), "test", 0, 0, string.Empty);
+
+        var result = await _controller.UpdateIssue(request);
+
+        EnsureCorrectBadRequestResult(result as ObjectResult, nameof(Issue.Id));
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(251)]
+    [InlineData(1027)]
+    public async Task UpdateIssue_ReturnsBadRequest_TitleIsNotValid(int titleLength)
+    {
+        StringBuilder strBuilder = new();
+        for (int i = 0; i < titleLength; i++)
+            strBuilder.Append('.');
+
+        Random rand = new();
+        Guid id = _context.Issues
+            .Select(issue => issue.Id)
+            .ToList()
+            .ElementAt(rand.Next(_context.Issues.Count()));
+
+        var request = new UpdateIssueRequest(id, strBuilder.ToString(), 0, 0, string.Empty);
+
+        var result = await _controller.UpdateIssue(request);
+
+        EnsureCorrectBadRequestResult(result as ObjectResult, nameof(Issue.Title));
+    }
+
+    [Theory]
+    [InlineData(2501)]
+    [InlineData(5000)]
+    public async Task UpdateIssue_ReturnsBadRequest_DescriptionIsNotValid(int descriptionLength)
+    {
+        StringBuilder strBuilder = new();
+        for (int i = 0; i < descriptionLength; i++)
+            strBuilder.Append('.');
+
+        Random rand = new();
+        Guid id = _context.Issues
+            .Select(issue => issue.Id)
+            .ToList()
+            .ElementAt(rand.Next(_context.Issues.Count()));
+
+        var request = new UpdateIssueRequest(id, "test", 0, 0, strBuilder.ToString());
+
+        var result = await _controller.UpdateIssue(request);
+
+        EnsureCorrectBadRequestResult(result as ObjectResult, nameof(Issue.Description));
+    }
+
+    [Theory]
+    [InlineData(91)]
+    [InlineData(-91)]
+    public async Task UpdateIssue_ReturnsBadRequest_LatitudeIsNotValid(double latitude)
+    {
+        Random rand = new();
+        Guid id = _context.Issues
+            .Select(issue => issue.Id)
+            .ToList()
+            .ElementAt(rand.Next(_context.Issues.Count()));
+
+        var request = new UpdateIssueRequest(id, "test", latitude, 0, string.Empty);
+
+        var result = await _controller.UpdateIssue(request);
+
+        EnsureCorrectBadRequestResult(result as ObjectResult, "latitude");
+    }
+
+    [Theory]
+    [InlineData(181)]
+    [InlineData(-181)]
+    public async Task UpdateIssue_ReturnsBadRequest_LongitudeIsNotValid(double longitude)
+    {
+        Random rand = new();
+        Guid id = _context.Issues
+            .Select(issue => issue.Id)
+            .ToList()
+            .ElementAt(rand.Next(_context.Issues.Count()));
+
+        var request = new UpdateIssueRequest(id, "test", 0, longitude, string.Empty);
+
+        var result = await _controller.UpdateIssue(request);
 
         EnsureCorrectBadRequestResult(result as ObjectResult, "longitude");
     }

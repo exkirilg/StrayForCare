@@ -72,4 +72,36 @@ public class IssuesServices : ServicesErrors, IIssuesServices
 
         return issue is not null ? issue.Id : default;
     }
+
+    public async Task UpdateIssueAsync(UpdateIssueRequest request)
+    {
+        RunnerWriteDbAsync<UpdateIssueRequest, Issue> runner = new(
+            _context,
+            new UpdateIssueAction(new IssuesDbAccess(_context))
+        );
+
+        try
+        {
+            _ = await runner.RunActionAsync(request);
+            if (runner.HasErrors) _errors.AddRange(runner.Errors);
+        }
+        catch (NoEntityFoundByIdException ex)
+        {
+            _errors.Add(
+                new ValidationResult(
+                    ex.Message,
+                    new string[] { ex.PropertyName }));
+        }
+        catch (ArgumentOutOfRangeException ex)
+        {
+            if (ex.ParamName == "latitude" || ex.ParamName == "longitude")
+            {
+                _errors.Add(
+                    new ValidationResult(
+                        ex.Message,
+                        new string[] { ex.ParamName }));
+            }
+            else throw;
+        }
+    }
 }

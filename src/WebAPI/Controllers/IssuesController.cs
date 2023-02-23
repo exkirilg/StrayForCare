@@ -50,4 +50,22 @@ public class IssuesController : ControllerBase
 
         return Ok();
     }
+
+    /// <summary>
+    /// Changes Issue
+    /// </summary>
+    /// <param name="request"></param>
+    /// <returns></returns>
+    /// <response code="200"></response>
+    /// <response code="400">Request validation error or no issue found by provided id</response>
+    [HttpPut]
+    public async Task<IActionResult> UpdateIssue(UpdateIssueRequest request)
+    {
+        await _issuesServices.UpdateIssueAsync(request);
+
+        if (_issuesServices.HasErrors)
+            return this.ParseServicesErrorsToResult(_issuesServices);
+
+        return Ok();
+    }
 }
