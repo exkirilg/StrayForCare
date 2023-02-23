@@ -7,6 +7,6 @@ public static class TagsMapToDtoSelect
 {
     public static IQueryable<TagDto> MapTagsToDto(this IQueryable<Tag> tags)
     {
-        return tags.Select(tag => TagDto.FromTag(tag));
+        return tags.Select(tag => new TagDto(tag));
     }
 }

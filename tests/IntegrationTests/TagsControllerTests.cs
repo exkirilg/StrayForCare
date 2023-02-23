@@ -35,7 +35,7 @@ public class TagsControllerTests : IClassFixture<TestDatabaseFixture>
         else query = query.OrderBy(tag => tag.Name);
         query = query.Skip(pageSize * (pageNum - 1)).Take(pageSize);
 
-        IEnumerable<TagDto> expCollection = query.Select(TagDto.FromTag).ToList();
+        IEnumerable<TagDto> expCollection = query.Select(tag => new TagDto(tag)).ToList();
 
         var result = await controller.GetTagsWithPagination(request);
         var collection = EnsureCorrectOkObjectResultAndCorrectValue<IEnumerable<TagDto>>(result as ObjectResult);
@@ -61,7 +61,7 @@ public class TagsControllerTests : IClassFixture<TestDatabaseFixture>
         IEnumerable<TagDto> expCollection = context.Tags
             .Where(tag => tag.Name.ToLower().Contains(nameSearch.ToLower()))
             .OrderBy(tag => tag.Name)
-            .Select(TagDto.FromTag)
+            .Select(tag => new TagDto(tag))
             .ToList();
 
         var result = await controller.GetTagsWithPagination(request);
@@ -103,7 +103,7 @@ public class TagsControllerTests : IClassFixture<TestDatabaseFixture>
         using var context = _fixture.CreateContext();
         var controller = new TagsController(new TagsServices(context));
 
-        IEnumerable<TagDto> tagsDto = context.Tags.Select(TagDto.FromTag).ToList();
+        IEnumerable<TagDto> tagsDto = context.Tags.Select(tag => new TagDto(tag)).ToList();
 
         foreach (TagDto expDto in tagsDto)
         {

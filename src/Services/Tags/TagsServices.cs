@@ -92,7 +92,7 @@ public class TagsServices : ITagsServices
         if (tag is null)
             return null;
 
-        return TagDto.FromTag(tag);
+        return new TagDto(tag);
     }
 
     public async Task<Guid> NewTagAsync(NewTagRequest request)
