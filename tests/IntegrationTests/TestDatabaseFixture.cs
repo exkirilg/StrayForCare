@@ -43,7 +43,9 @@ public class TestDatabaseFixture
     public DataContext CreateContext()
         => new(
             new DbContextOptionsBuilder<DataContext>()
-                .UseNpgsql(_configuration.GetConnectionString("AppDataConnection"))
+                .UseNpgsql(
+                    _configuration.GetConnectionString("AppDataConnection"),
+                    x => x.UseNetTopologySuite())
                 .Options);
 
     private void SeedTagsTestData(DataContext context)
