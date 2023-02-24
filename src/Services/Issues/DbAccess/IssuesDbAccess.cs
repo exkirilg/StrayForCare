@@ -30,4 +30,9 @@ public class IssuesDbAccess : IIssuesDbAccess
     {
         await _context.AddAsync(newIssue);
     }
+
+    public void Remove(Issue issue)
+    {
+        _context.Remove(issue);
+    }
 }

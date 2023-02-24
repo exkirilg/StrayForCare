@@ -157,7 +157,7 @@ public class TagsServices : ServicesErrors, ITagsServices
         }
     }
 
-    public async Task SoftDeleteAsync(Guid id)
+    public async Task SoftDeleteTagAsync(Guid id)
     {
         RunnerWriteDbAsync<Guid, Tag> runner = new(
             _context,
@@ -178,7 +178,7 @@ public class TagsServices : ServicesErrors, ITagsServices
         }
     }
 
-    public async Task DeleteAsync(Guid id)
+    public async Task DeleteTagAsync(Guid id)
     {
         RunnerWriteDbAsync<Guid, Tag> runner = new(
             _context,

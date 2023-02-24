@@ -7,4 +7,6 @@ public interface IIssuesServices : IServicesErrors
     Task<IssueDto?> GetIssueByIdAsync(Guid id);
     Task<Guid> NewIssueAsync(NewIssueRequest request);
     Task UpdateIssueAsync(UpdateIssueRequest request);
+    Task SoftDeleteIssueAsync(Guid id);
+    Task DeleteIssueAsync(Guid id);
 }

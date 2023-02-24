@@ -4,6 +4,7 @@ using WebAPI.Controllers;
 using Services.Issues;
 using Services.Issues.Dto;
 using System.Text;
+using Microsoft.EntityFrameworkCore;
 
 namespace IntegrationTests;
 
@@ -267,6 +268,87 @@ public class IssuesControllerTests : BasicControllerTests<IssuesController>
         var result = await _controller.UpdateIssue(request);
 
         EnsureCorrectBadRequestResult(result as ObjectResult, "longitude");
+    }
+
+    #endregion
+
+    #region Soft delete
+
+    [Fact]
+    public async Task SoftDeleteIssue_ReturnsOk()
+    {
+        _context.Database.BeginTransaction();
+
+        Random rand = new();
+
+        for (int i = 0; i < _context.Issues.Count() * 2; i++)
+        {
+            Guid id = _context.Issues
+                .Select(issue => issue.Id)
+                .ToList()
+                .ElementAt(rand.Next(_context.Issues.Count()));
+
+            var result = await _controller.SoftDeleteIssue(id);
+
+            EnsureCorrectOkStatusCodeResult(result as StatusCodeResult);
+
+            // No issue with query filter
+            Assert.Null(
+                _context.Issues.FirstOrDefault(issue => issue.Id == id)
+            );
+
+            // There is an issue with query filter ignored
+            Issue? issue = _context.Issues.IgnoreQueryFilters().Single(issue => issue.Id == id);
+            Assert.NotNull(issue);
+            Assert.True(issue.SoftDeleted);
+        }
+
+        _context.ChangeTracker.Clear();
+    }
+
+    [Fact]
+    public async Task SoftDeleteIssue_ReturnsBadRequest()
+    {
+        var result = await _controller.SoftDeleteIssue(Guid.NewGuid());
+
+        EnsureCorrectBadRequestResult(result as ObjectResult, nameof(Issue.Id));
+    }
+
+    #endregion
+
+    #region Delete
+
+    [Fact]
+    public async Task DeleteIssue_ReturnsOk()
+    {
+        _context.Database.BeginTransaction();
+
+        foreach (Guid id in _context.Issues.Select(issue => issue.Id).ToList())
+        {
+            var result = await _controller.DeleteIssue(id);
+
+            EnsureCorrectOkStatusCodeResult(result as StatusCodeResult);
+
+            // No issue with query filter
+            Assert.Null(
+                _context.Issues.FirstOrDefault(issue => issue.Id == id)
+            );
+
+            // No issue with query filter ignored
+            Assert.Null(
+                _context.Issues.IgnoreQueryFilters().FirstOrDefault(issue => issue.Id == id)
+            );
+        }
+
+        _context.ChangeTracker.Clear();
+    }
+
+    [Fact]
+    public async Task DeleteIssue_ReturnsBadRequest()
+    {
+        var result = await _controller.DeleteIssue(Guid.NewGuid());
+
+        EnsureCorrectBadRequestResult(result as ObjectResult, nameof(Issue.Id));
     }
 
     #endregion

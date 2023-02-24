@@ -97,7 +97,7 @@ public class TagsController : ControllerBase
     [HttpPut("delete/{id}")]
     public async Task<IActionResult> SoftDeleteTag(Guid id)
     {
-        await _tagsServices.SoftDeleteAsync(id);
+        await _tagsServices.SoftDeleteTagAsync(id);
 
         if (_tagsServices.HasErrors)
             return this.ParseServicesErrorsToResult(_tagsServices);
@@ -115,7 +115,7 @@ public class TagsController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteTag(Guid id)
     {
-        await _tagsServices.DeleteAsync(id);
+        await _tagsServices.DeleteTagAsync(id);
 
         if (_tagsServices.HasErrors)
             return this.ParseServicesErrorsToResult(_tagsServices);

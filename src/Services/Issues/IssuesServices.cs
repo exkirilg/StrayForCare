@@ -104,4 +104,46 @@ public class IssuesServices : ServicesErrors, IIssuesServices
             else throw;
         }
     }
+
+    public async Task SoftDeleteIssueAsync(Guid id)
+    {
+        RunnerWriteDbAsync<Guid, Issue> runner = new(
+            _context,
+            new SoftDeleteIssueAction(new IssuesDbAccess(_context))
+        );
+
+        try
+        {
+            _ = await runner.RunActionAsync(id);
+            if (runner.HasErrors) _errors.AddRange(runner.Errors);
+        }
+        catch (NoEntityFoundByIdException ex)
+        {
+            _errors.Add(
+                new ValidationResult(
+                    ex.Message,
+                    new string[] { ex.PropertyName }));
+        }
+    }
+
+    public async Task DeleteIssueAsync(Guid id)
+    {
+        RunnerWriteDbAsync<Guid, Issue> runner = new(
+            _context,
+            new DeleteIssueAction(new IssuesDbAccess(_context))
+        );
+
+        try
+        {
+            _ = await runner.RunActionAsync(id);
+            if (runner.HasErrors) _errors.AddRange(runner.Errors);
+        }
+        catch (NoEntityFoundByIdException ex)
+        {
+            _errors.Add(
+                new ValidationResult(
+                    ex.Message,
+                    new string[] { ex.PropertyName }));
+        }
+    }
 }

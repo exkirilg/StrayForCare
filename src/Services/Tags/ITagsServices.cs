@@ -8,6 +8,6 @@ public interface ITagsServices : IServicesErrors
     Task<TagDto?> GetTagByIdAsync(Guid id);
     Task<Guid> NewTagAsync(NewTagRequest request);
     Task UpdateTagNameAsync(UpdateTagNameRequest request);
-    Task SoftDeleteAsync(Guid id);
-    Task DeleteAsync(Guid id);
+    Task SoftDeleteTagAsync(Guid id);
+    Task DeleteTagAsync(Guid id);
 }
