@@ -4,7 +4,7 @@ namespace Services.Tags;
 
 public interface ITagsServices : IServicesErrors
 {
-    Task<IEnumerable<TagDto>> GetTagsWithPagination(GetTagsRequest request);
+    Task<GetTagsResponse?> GetTagsWithPagination(GetTagsRequest request);
     Task<TagDto?> GetTagByIdAsync(Guid id);
     Task<Guid> NewTagAsync(NewTagRequest request);
     Task UpdateTagNameAsync(UpdateTagNameRequest request);

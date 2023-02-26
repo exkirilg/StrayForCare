@@ -25,7 +25,7 @@ public class TagsController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetTagsWithPagination([FromQuery] GetTagsRequest request)
     {
-        IEnumerable<TagDto> result = await _tagsServices.GetTagsWithPagination(request);
+        GetTagsResponse? result = await _tagsServices.GetTagsWithPagination(request);
 
         if (_tagsServices.HasErrors)
             return this.ParseServicesErrorsToResult(_tagsServices);

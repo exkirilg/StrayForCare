@@ -3,7 +3,7 @@ using Services.Tags.Dto;
 
 namespace Services.Tags.Actions;
 
-public class GetTagsWithPaginationAction : ActionErrors, IActionAsync<GetTagsRequest, IEnumerable<TagDto>>
+public class GetTagsWithPaginationAction : ActionErrors, IActionAsync<GetTagsRequest, GetTagsResponse>
 {
     private readonly ITagsDbAccess _dbAccess;
 
@@ -12,7 +12,7 @@ public class GetTagsWithPaginationAction : ActionErrors, IActionAsync<GetTagsReq
         _dbAccess = dbAccess;
     }
 
-    public async Task<IEnumerable<TagDto>> ActionAsync(GetTagsRequest request)
+    public async Task<GetTagsResponse> ActionAsync(GetTagsRequest request)
     {
         return await _dbAccess.GetTagsDtoWithPaginationAsync(request);
     }

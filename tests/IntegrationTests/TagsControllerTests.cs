@@ -34,12 +34,13 @@ public class TagsControllerTests : BasicControllerTests<TagsController>
         query = query.Skip(pageSize * (pageNum - 1)).Take(pageSize);
 
         IEnumerable<TagDto> expCollection = query.Select(tag => new TagDto(tag)).ToList();
+        int expTotalCount = _context.Tags.Count();
 
         var result = await _controller.GetTagsWithPagination(request);
-        var collection = EnsureCorrectOkObjectResultAndCorrectValue<IEnumerable<TagDto>>(result as ObjectResult);
+        var response = EnsureCorrectOkObjectResultAndCorrectValue<GetTagsResponse>(result as ObjectResult);
 
-        Assert.Equal(expCollection.Count(), collection.Count());        
-        Assert.Equal(expCollection, collection);
+        Assert.Equal(expCollection, response.Tags);
+        Assert.Equal(expTotalCount, response.TotalCount);
     }
 
     [Theory]
@@ -60,9 +61,9 @@ public class TagsControllerTests : BasicControllerTests<TagsController>
             .ToList();
 
         var result = await _controller.GetTagsWithPagination(request);
-        var collection = EnsureCorrectOkObjectResultAndCorrectValue<IEnumerable<TagDto>>(result as ObjectResult);
+        var response = EnsureCorrectOkObjectResultAndCorrectValue<GetTagsResponse>(result as ObjectResult);
 
-        Assert.Equal(expCollection, collection);
+        Assert.Equal(expCollection, response.Tags);
     }
 
     [Theory]

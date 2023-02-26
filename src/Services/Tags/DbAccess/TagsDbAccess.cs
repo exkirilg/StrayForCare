@@ -18,7 +18,7 @@ public class TagsDbAccess : ITagsDbAccess
         _context = context;
     }
 
-    public async Task<IEnumerable<TagDto>> GetTagsDtoWithPaginationAsync(GetTagsRequest request)
+    public async Task<GetTagsResponse> GetTagsDtoWithPaginationAsync(GetTagsRequest request)
     {
         Expression<Func<Tag, bool>>? filter = null;
         if (!string.IsNullOrWhiteSpace(request.NameSearch))
@@ -28,13 +28,16 @@ public class TagsDbAccess : ITagsDbAccess
         if (request.Descending)
             orderBy = TagsOrderByOptions.ByNameDescending;
 
-        return await _context.Tags
-            .AsNoTracking()
-            .FilterTags(filter)
-            .OrderTags(orderBy)
-            .MapTagsToDto()
-            .Page(request.PageSize, request.PageNum)
-            .ToListAsync();
+        return new GetTagsResponse(
+            await _context.Tags
+                .AsNoTracking()
+                .FilterTags(filter)
+                .OrderTags(orderBy)
+                .MapTagsToDto()
+                .Page(request.PageSize, request.PageNum)
+                .ToListAsync(),
+            await _context.Tags.CountAsync()
+        );
     }
 
     public async Task<Tag> GetTagByIdAsync(Guid id)
