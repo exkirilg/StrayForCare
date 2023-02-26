@@ -17,6 +17,7 @@ namespace DataAccess.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     Title = table.Column<string>(type: "text", maxLength: 250, nullable: false),
                     Location = table.Column<Point>(type: "geography", nullable: false),
                     Description = table.Column<string>(type: "text", maxLength: 2500, nullable: false),

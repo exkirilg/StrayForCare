@@ -61,7 +61,14 @@ public class TestDatabaseFixture
             Description = "I've just found an adorable kitten on the street, it would be so nice if someone would take care of it!"
         };
         issue.SetLocation(33.525392803570526, 44.616615916982816);
+        issues.Add(issue);
 
+        issue = new Issue()
+        {
+            Title = "A band of adorable puppies",
+            Description = "Great bunch of cutest puppies in the world!"
+        };
+        issue.SetLocation(25.935264334932786, 48.29284943040044);
         issues.Add(issue);
 
         context.AddRange(issues);

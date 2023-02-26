@@ -16,6 +16,24 @@ public class IssuesController : ControllerBase
     }
 
     /// <summary>
+    /// Returns collection of Issues with pagination
+    /// </summary>
+    /// <param name="request"></param>
+    /// <returns></returns>
+    /// <response code="200"></response>
+    /// <response code="400">Request validation error</response>
+    [HttpGet]
+    public async Task<IActionResult> GetIssuesWithPagination([FromQuery] GetIssuesRequest request)
+    {
+        GetIssuesResponse? result = await _issuesServices.GetIssuesWithPagination(request);
+
+        if (_issuesServices.HasErrors)
+            return this.ParseServicesErrorsToResult(_issuesServices);
+
+        return Ok(result);
+    }
+
+    /// <summary>
     /// Returns Issue with specified id
     /// </summary>
     /// <param name="id"></param>

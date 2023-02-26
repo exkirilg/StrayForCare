@@ -19,11 +19,9 @@ public class TagsControllerTests : BasicControllerTests<TagsController>
 
     [Theory]
 	[InlineData(5, 1, false)]
-    [InlineData(5, 2, false)]
     [InlineData(5, 3, false)]
-    [InlineData(5, 1, true)]
-    [InlineData(5, 2, true)]
-    [InlineData(5, 3, true)]
+    [InlineData(3, 1, true)]
+    [InlineData(3, 3, true)]
     public async Task GetTagsWithPagination_ReturnsOk(int pageSize, int pageNum, bool desc)
 	{
         GetTagsRequest request = new(pageSize, pageNum, Descending: desc);

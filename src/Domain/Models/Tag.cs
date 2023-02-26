@@ -2,7 +2,7 @@
 
 namespace Domain.Models;
 
-public class Tag : BaseEntity, IComparable<Tag>, IValidatableObject
+public class Tag : BaseEntity, IValidatableObject
 {
     private string _name = string.Empty;
 
@@ -10,11 +10,6 @@ public class Tag : BaseEntity, IComparable<Tag>, IValidatableObject
     {
         get => _name;
         set => _name = value.Trim();
-    }
-
-    public int CompareTo(Tag? other)
-    {
-        return other is null ? -1 : Name.CompareTo(other.Name);
     }
 
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)

@@ -15,6 +15,44 @@ public class IssuesServices : ServicesErrors, IIssuesServices
     {
     }
 
+    public async Task<GetIssuesResponse?> GetIssuesWithPagination(GetIssuesRequest request)
+    {
+        GetIssuesResponse? result = default;
+
+        var validationResults = request.Validate(new ValidationContext(request));
+        if (validationResults.Any())
+        {
+            _errors.AddRange(validationResults);
+            return result;
+        }
+
+        RunnerReadDbAsync<GetIssuesRequest, GetIssuesResponse> runner = new(
+            new GetIssuesWithPaginationAction(new IssuesDbAccess(_context))
+        );
+
+        try
+        {
+            result = await runner.RunActionAsync(request);
+            if (runner.HasErrors) _errors.AddRange(runner.Errors);
+        }
+        catch (ArgumentOutOfRangeException ex)
+        {
+            if (ex.ParamName is null ||
+                !(ex.ParamName != nameof(GetIssuesRequest.PageSize)
+                || ex.ParamName != nameof(GetIssuesRequest.PageNum)))
+            {
+                throw;
+            }
+
+            _errors.Add(
+                new ValidationResult(
+                    ex.Message,
+                    new string[] { ex.ParamName }));
+        }
+
+        return result;
+    }
+
     public async Task<IssueDto?> GetIssueByIdAsync(Guid id)
     {
         RunnerReadDbAsync<Guid, Issue> runner = new(

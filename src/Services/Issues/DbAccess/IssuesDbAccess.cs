@@ -2,6 +2,9 @@
 using Domain.Models;
 using Microsoft.EntityFrameworkCore;
 using Services.Exceptions;
+using Services.Issues.Dto;
+using Services.Issues.Queries;
+using Services.Queries;
 
 namespace Services.Issues.DbAccess;
 
@@ -12,6 +15,31 @@ public class IssuesDbAccess : IIssuesDbAccess
     public IssuesDbAccess(DataContext context)
     {
         _context = context;
+    }
+
+    public async Task<GetIssuesResponse> GetIssuesDtoWithPaginationAsync(GetIssuesRequest request)
+    {
+        IssuesOrderByOptions orderBy = IssuesOrderByOptions.ByDistanceAscending;
+        if (request.SortBy == nameof(GetIssuesRequestSortByOptions.CreatedAt))
+        {
+            orderBy = request.Descending ?
+                IssuesOrderByOptions.ByCreatedAtDescending : IssuesOrderByOptions.ByCreatedAtAscending;
+        }
+        else if (request.SortBy == nameof(GetIssuesRequestSortByOptions.Distance))
+        {
+            orderBy = request.Descending ?
+                IssuesOrderByOptions.ByDistanceDescending : IssuesOrderByOptions.ByDistanceAscending;
+        }
+
+        return new GetIssuesResponse(
+            await _context.Issues
+                .AsNoTracking()
+                .OrderIssues(orderBy)
+                .MapIssuesToDto()
+                .Page(request.PageSize, request.PageNum)
+                .ToListAsync(),
+            await _context.Issues.CountAsync()
+        );
     }
 
     public async Task<Issue> GetIssueByIdAsync(Guid id)

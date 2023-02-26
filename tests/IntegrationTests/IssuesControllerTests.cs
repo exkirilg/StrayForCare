@@ -16,6 +16,61 @@ public class IssuesControllerTests : BasicControllerTests<IssuesController>
         _controller = new IssuesController(new IssuesServices(_context));
     }
 
+    #region Get with pagination
+
+    [Theory]
+    [InlineData(5, 1, "CreatedAt", false)]
+    [InlineData(5, 3, "CreatedAt", false)]
+    [InlineData(3, 1, "CreatedAt", true)]
+    [InlineData(3, 3, "CreatedAt", true)]
+    public async Task GetIssuesWithPagination_ReturnsOk(int pageSize, int pageNum, string sortBy, bool desc)
+    {
+        GetIssuesRequest request = new(pageSize, pageNum, sortBy, desc);
+
+        IQueryable<Issue> query = _context.Issues;
+        if (sortBy == "CreatedAt")
+        {
+            query = desc ?
+                query.OrderByDescending(issue => issue.CreatedAt) : query.OrderBy(issue => issue.CreatedAt);
+        }
+        query = query.Skip(pageSize * (pageNum - 1)).Take(pageSize);
+
+        IEnumerable<IssueDto> expCollection = query.Select(issue => new IssueDto(issue)).ToList();
+        int expTotalCount = _context.Issues.Count();
+
+        var result = await _controller.GetIssuesWithPagination(request);
+        var response = EnsureCorrectOkObjectResultAndCorrectValue<GetIssuesResponse>(result as ObjectResult);
+
+        Assert.Equal(expCollection, response.Issues);
+        Assert.Equal(expTotalCount, response.TotalCount);
+    }
+
+    [Theory]
+    [InlineData(0, 1)]
+    [InlineData(0, 0)]
+    [InlineData(1, 0)]
+    [InlineData(-1, 1)]
+    [InlineData(-1, -1)]
+    [InlineData(1, -1)]
+    public async Task GetIssuesWithPagination_ReturnsBadRequest(int pageSize, int pageNum)
+    {
+        GetIssuesRequest request = new(pageSize, pageNum);
+
+        string? expProps = default;
+        if (pageSize <= 0 && pageNum <= 0)
+            expProps = $"{nameof(GetIssuesRequest.PageSize)},{nameof(GetIssuesRequest.PageNum)}";
+        else if (pageSize <= 0)
+            expProps = nameof(GetIssuesRequest.PageSize);
+        else if (pageNum <= 0)
+            expProps = nameof(GetIssuesRequest.PageNum);
+
+        var result = await _controller.GetIssuesWithPagination(request);
+
+        EnsureCorrectBadRequestResult(result as ObjectResult, expProps);
+    }
+
+    #endregion
+
     #region Get by id
 
     [Fact]
