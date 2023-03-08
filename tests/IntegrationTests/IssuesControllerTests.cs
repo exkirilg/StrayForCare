@@ -25,7 +25,7 @@ public class IssuesControllerTests : BasicControllerTests<IssuesController>
     [InlineData(3, 3, "CreatedAt", true)]
     public async Task GetIssuesWithPagination_ReturnsOk(int pageSize, int pageNum, string sortBy, bool desc)
     {
-        GetIssuesRequest request = new(pageSize, pageNum, sortBy, desc);
+        GetIssuesRequest request = new() { PageSize = pageSize, PageNum = pageNum, SortBy = sortBy, Descending = desc };
 
         IQueryable<Issue> query = _context.Issues;
         if (sortBy == "CreatedAt")
@@ -52,14 +52,15 @@ public class IssuesControllerTests : BasicControllerTests<IssuesController>
     [InlineData(-1, 1)]
     [InlineData(-1, -1)]
     [InlineData(1, -1)]
+    [InlineData(101, 1)]
     public async Task GetIssuesWithPagination_ReturnsBadRequest(int pageSize, int pageNum)
     {
-        GetIssuesRequest request = new(pageSize, pageNum);
+        GetIssuesRequest request = new() { PageSize = pageSize, PageNum = pageNum };
 
         string? expProps = default;
-        if (pageSize <= 0 && pageNum <= 0)
+        if ((pageSize <= 0 || pageSize > 100) && pageNum <= 0)
             expProps = $"{nameof(GetIssuesRequest.PageSize)},{nameof(GetIssuesRequest.PageNum)}";
-        else if (pageSize <= 0)
+        else if (pageSize <= 0 || pageSize > 100)
             expProps = nameof(GetIssuesRequest.PageSize);
         else if (pageNum <= 0)
             expProps = nameof(GetIssuesRequest.PageNum);
