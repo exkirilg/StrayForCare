@@ -19,30 +19,142 @@ public class IssuesControllerTests : BasicControllerTests<IssuesController>
     #region Get with pagination
 
     [Theory]
-    [InlineData(5, 1, "CreatedAt", false)]
-    [InlineData(5, 3, "CreatedAt", false)]
-    [InlineData(3, 1, "CreatedAt", true)]
-    [InlineData(3, 3, "CreatedAt", true)]
-    public async Task GetIssuesWithPagination_ReturnsOk(int pageSize, int pageNum, string sortBy, bool desc)
+    [InlineData(5, 1, false)]
+    [InlineData(5, 3, false)]
+    [InlineData(3, 1, true)]
+    [InlineData(3, 3, true)]
+    public async Task GetIssuesWithPaginationSortedByCreatedAt_ReturnsOk(int pageSize, int pageNum, bool desc)
     {
-        GetIssuesRequest request = new() { PageSize = pageSize, PageNum = pageNum, SortBy = sortBy, Descending = desc };
+        GetIssuesRequest request = new() { PageSize = pageSize, PageNum = pageNum, SortBy = "CreatedAt", Descending = desc };
 
-        IQueryable<Issue> query = _context.Issues;
-        if (sortBy == "CreatedAt")
-        {
-            query = desc ?
-                query.OrderByDescending(issue => issue.CreatedAt) : query.OrderBy(issue => issue.CreatedAt);
-        }
-        query = query.Skip(pageSize * (pageNum - 1)).Take(pageSize);
+        IQueryable<Issue> query = _context.Issues
+            .Skip(pageSize * (pageNum - 1)).Take(pageSize);
 
-        IEnumerable<IssueDto> expCollection = query.Select(issue => new IssueDto(issue)).ToList();
+        int expCount = query.Count();
         int expTotalCount = _context.Issues.Count();
 
         var result = await _controller.GetIssuesWithPagination(request);
         var response = EnsureCorrectOkObjectResultAndCorrectValue<GetIssuesResponse>(result as ObjectResult);
 
-        Assert.Equal(expCollection, response.Issues);
+        Assert.Equal(expCount, response.Issues.Count());
         Assert.Equal(expTotalCount, response.TotalCount);
+
+        DateTime lastCreatedAt = desc ? DateTime.MaxValue : default;
+        foreach (var issue in response.Issues)
+        {
+            if (desc)
+                Assert.True(issue.CreatedAt <= lastCreatedAt);
+            else
+                Assert.True(issue.CreatedAt >= lastCreatedAt);
+            
+            lastCreatedAt = issue.CreatedAt;
+        }
+    }
+
+    [Theory]
+    [InlineData(5, 1, false, 44.599478982826376, 33.456433940185825)]
+    [InlineData(5, 3, false, 44.599478982826376, 33.456433940185825)]
+    [InlineData(3, 1, true, 36.06138606707264, 138.0765888996556)]
+    [InlineData(3, 3, true, 36.06138606707264, 138.0765888996556)]
+    public async Task GetIssuesWithPaginationSortedByDistance_ReturnsOk(int pageSize, int pageNum, bool desc, double latitude, double longitude)
+    {
+        GetIssuesRequest request = new()
+        {
+            PageSize = pageSize, PageNum = pageNum, SortBy = "Distance",
+            Descending = desc, CurrentLocationLatitude = latitude, CurrentLocationLongitude = longitude
+        };
+
+        IQueryable<Issue> query = _context.Issues
+            .Skip(pageSize * (pageNum - 1)).Take(pageSize);
+
+        int expCount = query.Count();
+        int expTotalCount = _context.Issues.Count();
+
+        var result = await _controller.GetIssuesWithPagination(request);
+        var response = EnsureCorrectOkObjectResultAndCorrectValue<GetIssuesResponse>(result as ObjectResult);
+
+        Assert.Equal(expCount, response.Issues.Count());
+        Assert.Equal(expTotalCount, response.TotalCount);
+
+        double lastDistance = desc ? double.MaxValue : default;
+        foreach (var issue in response.Issues)
+        {
+            if (desc)
+                Assert.True(issue.Distance <= lastDistance);
+            else
+                Assert.True(issue.Distance >= lastDistance);
+
+            lastDistance = issue.Distance;
+        }
+    }
+
+    [Theory]
+    [InlineData(44.599478982826376, 33.456433940185825, 33.525392803570526, 44.616615916982816)]
+    [InlineData(36.06138606707264, 138.0765888996556, 30.718260692320914, 114.46375925631736)]
+    public async Task GetIssuesWithPaginationSortedByDistance_ReturnsClosest(double latitude, double longitude, double expLatitude, double expLongitude)
+    {
+        GetIssuesRequest request = new()
+        {
+            PageSize = 1,
+            PageNum = 1,
+            SortBy = "Distance",
+            Descending = false,
+            CurrentLocationLatitude = latitude,
+            CurrentLocationLongitude = longitude
+        };
+
+        var result = await _controller.GetIssuesWithPagination(request);
+        var response = EnsureCorrectOkObjectResultAndCorrectValue<GetIssuesResponse>(result as ObjectResult);
+
+        Assert.Single(response.Issues, issue => issue.Latitude == expLatitude && issue.Longitude == expLongitude);
+    }
+
+    [Theory]
+    [InlineData(44.599478982826376, 33.456433940185825, 30.395633523176564, -91.69046257720453)]
+    [InlineData(36.06138606707264, 138.0765888996556, 30.395633523176564, -91.69046257720453)]
+    public async Task GetIssuesWithPaginationSortedByDistance_ReturnsFarthest(double latitude, double longitude, double expLatitude, double expLongitude)
+    {
+        GetIssuesRequest request = new()
+        {
+            PageSize = 1,
+            PageNum = 1,
+            SortBy = "Distance",
+            Descending = true,
+            CurrentLocationLatitude = latitude,
+            CurrentLocationLongitude = longitude
+        };
+
+        var result = await _controller.GetIssuesWithPagination(request);
+        var response = EnsureCorrectOkObjectResultAndCorrectValue<GetIssuesResponse>(result as ObjectResult);
+
+        Assert.Single(response.Issues, issue => issue.Latitude == expLatitude && issue.Longitude == expLongitude);
+    }
+
+    [Theory]
+    [InlineData(44.599478982826376, 33.456433940185825, 0, 1560)]
+    [InlineData(44.599478982826376, 33.456433940185825, 1, 2407)]
+    [InlineData(44.599478982826376, 33.456433940185825, 2, 2465)]
+    [InlineData(44.599478982826376, 33.456433940185825, 3, 7003)]
+    [InlineData(44.599478982826376, 33.456433940185825, 4, 9997)]
+    public async Task GetIssuesWithPagination_ReturnsCorrectDistance(double latitude, double longitude, int elIndex, int expDistance)
+    {
+        GetIssuesRequest request = new()
+        {
+            PageSize = 5,
+            PageNum = 1,
+            SortBy = "Distance",
+            Descending = false,
+            CurrentLocationLatitude = latitude,
+            CurrentLocationLongitude = longitude
+        };
+
+        var result = await _controller.GetIssuesWithPagination(request);
+        var response = EnsureCorrectOkObjectResultAndCorrectValue<GetIssuesResponse>(result as ObjectResult);
+
+        var el = response.Issues.Skip(elIndex).First();
+        int distance = (int)Math.Round(el.Distance / 1000, 0);
+
+        Assert.Equal(expDistance, distance);
     }
 
     [Theory]

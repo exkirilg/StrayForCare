@@ -10,24 +10,33 @@ public record IssueDto : BaseEntityDto
     public string Title { get; init; }
     public string Description { get; init; }
     public double Latitude { get; init; }
-    public double Longitude { get; set; }
+    public double Longitude { get; init; }
+    public double Distance { get; init; }
 
     public IssueDto(
         Guid id, bool softDeleted,
         DateTime createdAt, string title,
-        string description, Point location
+        string description, Point location,
+        double distance
     ) : base(id, softDeleted)
     {
         CreatedAt = createdAt;
         Title = title;
         Description = description;
-        Latitude = location.X;
-        Longitude = location.Y;
+        Latitude = location.Y;
+        Longitude = location.X;
+        Distance = distance;
+    }
+
+    public IssueDto(Issue issue, double distance)
+        : this(issue.Id, issue.SoftDeleted, issue.CreatedAt,
+              issue.Title, issue.Description, issue.Location,
+              distance)
+    {
     }
 
     public IssueDto(Issue issue)
-        : this(issue.Id, issue.SoftDeleted, issue.CreatedAt,
-              issue.Title, issue.Description, issue.Location)
+        : this(issue, 0)
     {
     }
 }

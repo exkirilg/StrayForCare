@@ -63,12 +63,44 @@ public class TestDatabaseFixture
         issue.SetLocation(33.525392803570526, 44.616615916982816);
         issues.Add(issue);
 
+        Task.Delay(10).Wait();
+
         issue = new Issue()
         {
             Title = "A band of adorable puppies",
             Description = "Great bunch of cutest puppies in the world!"
         };
         issue.SetLocation(25.935264334932786, 48.29284943040044);
+        issues.Add(issue);
+
+        Task.Delay(10).Wait();
+
+        issue = new Issue()
+        {
+            Title = "Tortoise Manifique",
+            Description = "Just a turtle."
+        };
+        issue.SetLocation(48.86281344205555, 2.2597164566729004);
+        issues.Add(issue);
+
+        Task.Delay(10).Wait();
+
+        issue = new Issue()
+        {
+            Title = "I'm simple bat",
+            Description = "and you are dead"
+        };
+        issue.SetLocation(30.718260692320914, 114.46375925631736);
+        issues.Add(issue);
+
+        Task.Delay(10).Wait();
+
+        issue = new Issue()
+        {
+            Title = "Alligators doesn't bite!",
+            Description = "Were his last words."
+        };
+        issue.SetLocation(30.395633523176564, -91.69046257720453);
         issues.Add(issue);
 
         context.AddRange(issues);

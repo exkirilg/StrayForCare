@@ -13,11 +13,11 @@ public record GetIssuesRequest
 
     public bool Descending { get; set; } = false;
 
-    public double CurrentLocationLatitude { get; set; } = 0;
+    public double CurrentLocationLatitude { get; set; } = default;
 
-    public double CurrentLocationLongitude { get; set; } = 0;
+    public double CurrentLocationLongitude { get; set; } = default;
 
-    public int InDistance { get; set; } = 50000;
+    public int InDistance { get; set; } = default;
 
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {

@@ -1,10 +1,13 @@
 ﻿using DataAccess;
+using Domain.Helpers;
 using Domain.Models;
 using Microsoft.EntityFrameworkCore;
+using NetTopologySuite.Geometries;
 using Services.Exceptions;
 using Services.Issues.Dto;
 using Services.Issues.Queries;
 using Services.Queries;
+using System.Linq.Expressions;
 
 namespace Services.Issues.DbAccess;
 
@@ -19,6 +22,14 @@ public class IssuesDbAccess : IIssuesDbAccess
 
     public async Task<GetIssuesResponse> GetIssuesDtoWithPaginationAsync(GetIssuesRequest request)
     {
+        Point currentLocation = LocationHelper.CreateLocationByCoordinates(request.CurrentLocationLatitude, request.CurrentLocationLongitude);
+
+        Expression<Func<Issue, bool>>? filter = null;
+        if (request.InDistance != default)
+        {
+            filter = IssuesFilter.FilterByDistanceExpression(request.InDistance, currentLocation);
+        }
+
         IssuesOrderByOptions orderBy = IssuesOrderByOptions.ByDistanceAscending;
         if (request.SortBy == nameof(GetIssuesRequestSortByOptions.CreatedAt))
         {
@@ -34,8 +45,9 @@ public class IssuesDbAccess : IIssuesDbAccess
         return new GetIssuesResponse(
             await _context.Issues
                 .AsNoTracking()
-                .OrderIssues(orderBy)
-                .MapIssuesToDto()
+                .FilterIssues(filter)
+                .OrderIssues(orderBy, currentLocation)
+                .MapIssuesToDto(currentLocation)
                 .Page(request.PageSize, request.PageNum)
                 .ToListAsync(),
             await _context.Issues.CountAsync()
