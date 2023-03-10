@@ -16,11 +16,10 @@ public record IssueDto : BaseEntityDto
     public List<TagDto> Tags { get; init; } = new();
 
     public IssueDto(
-        Guid id, bool softDeleted,
-        DateTime createdAt, string title,
+        Guid id, DateTime createdAt, string title,
         string description, Point location,
         double distance, IEnumerable<TagDto> tags
-    ) : base(id, softDeleted)
+    ) : base(id)
     {
         CreatedAt = createdAt;
         Title = title;
@@ -32,9 +31,9 @@ public record IssueDto : BaseEntityDto
     }
 
     public IssueDto(Issue issue, double distance)
-        : this(issue.Id, issue.SoftDeleted, issue.CreatedAt,
-              issue.Title, issue.Description, issue.Location,
-              distance, issue.Tags.Select(tag => new TagDto(tag)))
+        : this(issue.Id, issue.CreatedAt, issue.Title,
+              issue.Description, issue.Location, distance,
+              issue.Tags.Select(tag => new TagDto(tag)))
     {
     }
 

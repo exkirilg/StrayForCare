@@ -7,14 +7,14 @@ public record TagDto : BaseEntityDto
 {
     public string Name { get; init; }
 
-    public TagDto(Guid id, bool softDeleted, string name)
-        : base(id, softDeleted)
+    public TagDto(Guid id, string name)
+        : base(id)
     {
         Name = name;
     }
 
     public TagDto(Tag tag)
-        : this(tag.Id, tag.SoftDeleted, tag.Name)
+        : this(tag.Id, tag.Name)
     {
     }
 }
