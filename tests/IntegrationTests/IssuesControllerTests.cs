@@ -491,6 +491,58 @@ public class IssuesControllerTests : BasicControllerTests<IssuesController>
 
     #endregion
 
+    #region Remove tag from issue
+
+    [Fact]
+    public async Task RemoveTagFromIssue_ReturnsOk()
+    {
+        _context.Database.BeginTransaction();
+
+        Issue issue = _context.Issues.First();
+        foreach (var tag in _context.Tags)
+            issue.AddTag(tag);
+
+        Random rand = new();
+
+        for (int i = 0; i < _context.Tags.Count() * 2; i++)
+        {
+            Tag tag = _context.Tags
+                .ToList()
+                .ElementAt(rand.Next(_context.Tags.Count()));
+
+            var request = new RemoveTagFromIssueRequest(issue.Id, tag.Id);
+            var result = await _controller.RemoveTagFromIssue(request);
+
+            EnsureCorrectOkStatusCodeResult(result as StatusCodeResult);
+
+            issue = _context.Issues.First(_issue => _issue.Id == issue.Id);
+
+            Assert.DoesNotContain<Tag>(tag, issue.Tags);
+        }
+
+        _context.ChangeTracker.Clear();
+    }
+
+    [Fact]
+    public async Task RemoveTagFromIssue_ReturnsBadRequest_InvalidIssueId()
+    {
+        var request = new RemoveTagFromIssueRequest(Guid.NewGuid(), _context.Tags.Select(tag => tag.Id).First());
+        var result = await _controller.RemoveTagFromIssue(request);
+
+        EnsureCorrectBadRequestResult(result as ObjectResult, nameof(Issue.Id));
+    }
+
+    [Fact]
+    public async Task RemoveTagFromIssue_ReturnsBadRequest_InvalidTagId()
+    {
+        var request = new RemoveTagFromIssueRequest(_context.Issues.Select(issue => issue.Id).First(), Guid.NewGuid());
+        var result = await _controller.RemoveTagFromIssue(request);
+
+        EnsureCorrectBadRequestResult(result as ObjectResult, nameof(Tag.Id));
+    }
+
+    #endregion
+
     #region Soft delete
 
     [Fact]
