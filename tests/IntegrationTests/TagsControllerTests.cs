@@ -7,6 +7,7 @@ using WebAPI.Controllers;
 
 namespace IntegrationTests;
 
+[Collection("Sequential")]
 public class TagsControllerTests : BasicControllerTests<TagsController>
 {
 	public TagsControllerTests(TestDatabaseFixture fixture)

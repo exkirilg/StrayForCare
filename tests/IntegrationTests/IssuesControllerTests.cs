@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace IntegrationTests;
 
+[Collection("Sequential")]
 public class IssuesControllerTests : BasicControllerTests<IssuesController>
 {
     public IssuesControllerTests(TestDatabaseFixture fixture)
@@ -436,6 +437,56 @@ public class IssuesControllerTests : BasicControllerTests<IssuesController>
         var result = await _controller.UpdateIssue(request);
 
         EnsureCorrectBadRequestResult(result as ObjectResult, "longitude");
+    }
+
+    #endregion
+
+    #region Add tag to issue
+
+    [Fact]
+    public async Task AddTagToIssue_ReturnsOk()
+    {
+        _context.Database.BeginTransaction();
+
+        Issue issue = _context.Issues.First();
+
+        Random rand = new();
+
+        for (int i = 0; i < _context.Tags.Count() * 2; i++)
+        {
+            Tag tag = _context.Tags
+                .ToList()
+                .ElementAt(rand.Next(_context.Tags.Count()));
+
+            var request = new AddTagToIssueRequest(issue.Id, tag.Id);
+            var result = await _controller.AddTagToIssue(request);
+
+            EnsureCorrectOkStatusCodeResult(result as StatusCodeResult);
+
+            issue = _context.Issues.First(_issue => _issue.Id == issue.Id);
+
+            Assert.Contains<Tag>(tag, issue.Tags);
+        }
+
+        _context.ChangeTracker.Clear();
+    }
+
+    [Fact]
+    public async Task AddTagToIssue_ReturnsBadRequest_InvalidIssueId()
+    {
+        var request = new AddTagToIssueRequest(Guid.NewGuid(), _context.Tags.Select(tag => tag.Id).First());
+        var result = await _controller.AddTagToIssue(request);
+
+        EnsureCorrectBadRequestResult(result as ObjectResult, nameof(Issue.Id));
+    }
+
+    [Fact]
+    public async Task AddTagToIssue_ReturnsBadRequest_InvalidTagId()
+    {
+        var request = new AddTagToIssueRequest(_context.Issues.Select(issue => issue.Id).First(), Guid.NewGuid());
+        var result = await _controller.AddTagToIssue(request);
+
+        EnsureCorrectBadRequestResult(result as ObjectResult, nameof(Tag.Id));
     }
 
     #endregion
