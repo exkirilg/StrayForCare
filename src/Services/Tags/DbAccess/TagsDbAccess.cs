@@ -33,8 +33,8 @@ public class TagsDbAccess : ITagsDbAccess
                 .AsNoTracking()
                 .FilterTags(filter)
                 .OrderTags(orderBy)
-                .MapTagsToDto()
                 .Page(request.PageSize, request.PageNum)
+                .MapTagsToDto()
                 .ToListAsync(),
             await _context.Tags.CountAsync()
         );

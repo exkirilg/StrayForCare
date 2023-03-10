@@ -1,6 +1,7 @@
 ﻿using Domain.Models;
 using NetTopologySuite.Geometries;
 using Services.Dto;
+using Services.Tags.Dto;
 
 namespace Services.Issues.Dto;
 
@@ -12,12 +13,13 @@ public record IssueDto : BaseEntityDto
     public double Latitude { get; init; }
     public double Longitude { get; init; }
     public double Distance { get; init; }
+    public List<TagDto> Tags { get; init; } = new();
 
     public IssueDto(
         Guid id, bool softDeleted,
         DateTime createdAt, string title,
         string description, Point location,
-        double distance
+        double distance, IEnumerable<TagDto> tags
     ) : base(id, softDeleted)
     {
         CreatedAt = createdAt;
@@ -26,12 +28,13 @@ public record IssueDto : BaseEntityDto
         Latitude = location.Y;
         Longitude = location.X;
         Distance = distance;
+        Tags.AddRange(tags);
     }
 
     public IssueDto(Issue issue, double distance)
         : this(issue.Id, issue.SoftDeleted, issue.CreatedAt,
               issue.Title, issue.Description, issue.Location,
-              distance)
+              distance, issue.Tags.Select(tag => new TagDto(tag)))
     {
     }
 

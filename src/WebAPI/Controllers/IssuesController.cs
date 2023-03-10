@@ -70,7 +70,7 @@ public class IssuesController : ControllerBase
     }
 
     /// <summary>
-    /// Changes Issue
+    /// Updates Issue
     /// </summary>
     /// <param name="request"></param>
     /// <returns></returns>
@@ -80,6 +80,42 @@ public class IssuesController : ControllerBase
     public async Task<IActionResult> UpdateIssue(UpdateIssueRequest request)
     {
         await _issuesServices.UpdateIssueAsync(request);
+
+        if (_issuesServices.HasErrors)
+            return this.ParseServicesErrorsToResult(_issuesServices);
+
+        return Ok();
+    }
+
+    /// <summary>
+    /// Links together issue and tag
+    /// </summary>
+    /// <param name="request"></param>
+    /// <returns></returns>
+    /// <response code="200"></response>
+    /// <response code="400">No issue or no tag found by provided ids</response>
+    [HttpPut("addTag")]
+    public async Task<IActionResult> AddTagToIssue(AddTagToIssueRequest request)
+    {
+        await _issuesServices.AddTagToIssueAsync(request);
+
+        if (_issuesServices.HasErrors)
+            return this.ParseServicesErrorsToResult(_issuesServices);
+
+        return Ok();
+    }
+
+    /// <summary>
+    /// Breaks link between issue and tag
+    /// </summary>
+    /// <param name="request"></param>
+    /// <returns></returns>
+    /// <response code="200"></response>
+    /// <response code="400">No issue or no tag found by provided ids</response>
+    [HttpPut("removeTag")]
+    public async Task<IActionResult> RemoveTagFromIssue(RemoveTagFromIssueRequest request)
+    {
+        await _issuesServices.RemoveTagFromIssueAsync(request);
 
         if (_issuesServices.HasErrors)
             return this.ParseServicesErrorsToResult(_issuesServices);

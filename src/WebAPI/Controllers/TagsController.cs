@@ -70,7 +70,7 @@ public class TagsController : ControllerBase
     }
 
     /// <summary>
-    /// Changes Tag's name
+    /// Updates Tag's name
     /// </summary>
     /// <param name="request"></param>
     /// <returns></returns>

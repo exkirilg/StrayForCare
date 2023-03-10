@@ -12,6 +12,10 @@ public class Tag : BaseEntity, IValidatableObject
         set => _name = value.Trim();
     }
 
+    private readonly List<Issue> _issues = new();
+
+    public IReadOnlyCollection<Issue> Issues => _issues;
+
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
         if (string.IsNullOrWhiteSpace(Name))

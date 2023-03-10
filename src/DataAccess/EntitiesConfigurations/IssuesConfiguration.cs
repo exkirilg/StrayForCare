@@ -15,6 +15,11 @@ internal class IssuesConfiguration : BaseEntityConfiguration<Issue>
             .IsRequired()
             .HasColumnType("timestamp with time zone");
 
+        builder.Property(issue => issue.Location)
+            .HasField("_location")
+            .IsRequired()
+            .HasColumnType("geography");
+
         builder
             .Property(issue => issue.Title)
             .HasField("_title")
@@ -22,15 +27,18 @@ internal class IssuesConfiguration : BaseEntityConfiguration<Issue>
             .IsRequired()
             .HasMaxLength(250);
 
-        builder.Property(issue => issue.Location)
-            .HasField("_location")
-            .IsRequired()
-            .HasColumnType("geography");
-
         builder
             .Property(issue => issue.Description)
             .HasField("_description")
             .HasColumnType("text")
             .HasMaxLength(2500);
+
+        builder
+            .HasMany<Tag>("_tags")
+            .WithMany("_issues")
+            .UsingEntity("IssueTag");
+
+        builder
+            .Ignore(issue => issue.Tags);
     }
 }

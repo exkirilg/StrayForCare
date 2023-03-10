@@ -7,11 +7,20 @@ namespace Domain.Models;
 public class Issue : BaseEntity, IValidatableObject
 {
     private readonly DateTime _createdAt = DateTime.UtcNow;
-    private string _title = string.Empty;
-    private Point _location = LocationHelper.DefaultLocation;
-    private string _description = string.Empty;
 
     public DateTime CreatedAt => _createdAt;
+
+    private Point _location = LocationHelper.DefaultLocation;
+
+    public Point Location => _location;
+
+    public void SetLocation(double latitude, double longitude)
+    {
+        _location = LocationHelper.CreateLocationByCoordinates(latitude, longitude);
+    }
+
+    private string _title = string.Empty;
+    private string _description = string.Empty;
 
     public string Title
     {
@@ -19,17 +28,25 @@ public class Issue : BaseEntity, IValidatableObject
         set => _title = value.Trim();
     }
 
-    public Point Location => _location;
-
     public string Description
     {
         get => _description;
         set => _description = value.Trim();
     }
 
-    public void SetLocation(double latitude, double longitude)
+    private readonly List<Tag> _tags = new();
+
+    public IReadOnlyList<Tag> Tags => _tags;
+
+    public void AddTag(Tag tag)
     {
-        _location = LocationHelper.CreateLocationByCoordinates(latitude, longitude);
+        if (_tags.Contains(tag)) return;
+        _tags.Add(tag);
+    }
+
+    public void RemoveTag(Tag tag)
+    {
+        _tags.Remove(tag);
     }
 
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)

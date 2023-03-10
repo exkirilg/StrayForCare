@@ -19,5 +19,13 @@ public class TagsConfiguration : BaseEntityConfiguration<Tag>
         builder
             .HasIndex(tag => tag.Name)
             .IsUnique();
+
+        builder
+            .HasMany<Issue>("_issues")
+            .WithMany("_tags")
+            .UsingEntity("IssueTag");
+
+        builder
+            .Ignore(tag => tag.Issues);
     }
 }

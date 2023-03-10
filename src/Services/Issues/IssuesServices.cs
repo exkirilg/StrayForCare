@@ -143,6 +143,48 @@ public class IssuesServices : ServicesErrors, IIssuesServices
         }
     }
 
+    public async Task AddTagToIssueAsync(AddTagToIssueRequest request)
+    {
+        RunnerWriteDbAsync<AddTagToIssueRequest, Issue> runner = new(
+            _context,
+            new AddTagToIssueAction(new IssuesDbAccess(_context))
+        );
+
+        try
+        {
+            _ = await runner.RunActionAsync(request);
+            if (runner.HasErrors) _errors.AddRange(runner.Errors);
+        }
+        catch (NoEntityFoundByIdException ex)
+        {
+            _errors.Add(
+                new ValidationResult(
+                    ex.Message,
+                    new string[] { ex.PropertyName }));
+        }
+    }
+
+    public async Task RemoveTagFromIssueAsync(RemoveTagFromIssueRequest request)
+    {
+        RunnerWriteDbAsync<RemoveTagFromIssueRequest, Issue> runner = new(
+            _context,
+            new RemoveTagFromIssueAction(new IssuesDbAccess(_context))
+        );
+
+        try
+        {
+            _ = await runner.RunActionAsync(request);
+            if (runner.HasErrors) _errors.AddRange(runner.Errors);
+        }
+        catch (NoEntityFoundByIdException ex)
+        {
+            _errors.Add(
+                new ValidationResult(
+                    ex.Message,
+                    new string[] { ex.PropertyName }));
+        }
+    }
+
     public async Task SoftDeleteIssueAsync(Guid id)
     {
         RunnerWriteDbAsync<Guid, Issue> runner = new(

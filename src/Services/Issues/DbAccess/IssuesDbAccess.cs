@@ -47,8 +47,9 @@ public class IssuesDbAccess : IIssuesDbAccess
                 .AsNoTracking()
                 .FilterIssues(filter)
                 .OrderIssues(orderBy, currentLocation)
-                .MapIssuesToDto(currentLocation)
                 .Page(request.PageSize, request.PageNum)
+                .Include("_tags")
+                .MapIssuesToDto(currentLocation)
                 .ToListAsync(),
             await _context.Issues.CountAsync()
         );
@@ -58,10 +59,23 @@ public class IssuesDbAccess : IIssuesDbAccess
     {
         Issue? result = await _context.Issues
             .IgnoreQueryFilters()
+            .Include("_tags")
             .FirstOrDefaultAsync(issue => issue.Id == id);
 
         if (result is null)
             throw new NoEntityFoundByIdException($"There is no {nameof(Issue)} with id {id}", nameof(Issue.Id));
+
+        return result;
+    }
+
+    public async Task<Tag> GetTagByIdAsync(Guid id)
+    {
+        Tag? result = await _context.Tags
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(tag => tag.Id == id);
+
+        if (result is null)
+            throw new NoEntityFoundByIdException($"There is no {nameof(Tag)} with id {id}", nameof(Tag.Id));
 
         return result;
     }
