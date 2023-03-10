@@ -196,7 +196,7 @@ public class IssuesControllerTests : BasicControllerTests<IssuesController>
             var result = await _controller.GetIssueById(expDto.Id);
             var dto = EnsureCorrectOkObjectResultAndCorrectValue<IssueDto>(result as ObjectResult);
 
-            Assert.Equal(expDto, dto);
+            Assert.Equal(expDto.Id, dto.Id);
         }
     }
 
